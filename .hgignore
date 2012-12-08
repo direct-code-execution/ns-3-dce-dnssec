@@ -1,0 +1,15 @@
+\.rej$
+\.orig$
+\.o$
+~$
+^build
+^objdir
+glob:**elf-cache
+glob:**/files-*
+^scrach
+^files-
+^.waf-
+^.lock-
+^ccnx-*
+^doc/build
+^NetAnim
