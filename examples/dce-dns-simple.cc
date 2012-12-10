@@ -57,6 +57,7 @@ int main (int argc, char *argv[])
 
   DceManagerHelper processManager;
   //processManager.SetLoader ("ns3::DlmLoaderFactory");
+  processManager.SetLoader ("ns3::CoojaLoaderFactory");
   if (m_delay)
     {
       processManager.SetDelayModel ("ns3::TimeOfDayProcessDelayModel");
@@ -128,7 +129,7 @@ int main (int argc, char *argv[])
       process.ResetArguments ();
       process.ParseArguments ("ns1.ns3-dns.wide.ad.jp");
 #endif
-      process.SetStackSize (1<<16);
+      process.SetStackSize (1<<31);
       apps = process.Install (nodes.Get (1));
 
       apps.Start (Seconds (1+ 10*i));
