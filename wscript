@@ -22,16 +22,16 @@ def build_dce_tests(module, bld):
     return
 
 def build_dce_examples(module, bld):
-    module.add_example(needed = ['core', 'network', 'dce', 'csma', 'point-to-point'], 
+    module.add_example(needed = ['core', 'network', 'dce', 'csma', 'point-to-point', 'dce-dnssec'], 
                        target='bin/dce-dns-simple',
                        source=['examples/dce-dns-simple.cc'])
 
 def build(bld):    
     module_source = [
-    #    'helper/bind9-helper.cc',
+        'helper/bind9-helper.cc',
         ]
     module_headers = [
-    #    'helper/bind9-helper.h',
+        'helper/bind9-helper.h',
         ]
     uselib = ns3waf.modules_uselib(bld, ['dce'])
     module = ns3waf.create_module(bld, name='dce-dnssec',

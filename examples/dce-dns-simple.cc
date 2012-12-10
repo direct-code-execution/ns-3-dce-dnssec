@@ -5,6 +5,7 @@
 #include "ns3/csma-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/mobility-module.h"
+#include "ns3/dce-dnssec-module.h"
 #include <fstream>
 
 using namespace ns3;
@@ -87,6 +88,7 @@ int main (int argc, char *argv[])
   apps = process.Install (nodes.Get (0));
   apps.Start (Seconds (1.0));
 #else
+#if 0
   process.SetBinary ("named");
   process.ResetArguments ();
   process.ParseArguments ("-f");
@@ -100,10 +102,16 @@ int main (int argc, char *argv[])
   process.SetStackSize (1<<16);
   apps = process.Install (nodes.Get (0));
   apps.Start (Seconds (1.0));
+#else
+  Bind9Helper bind9;
+  //bind9.UseManualConfig (nodes.Get (0));
+  bind9.Install (nodes.Get (0));
+#endif
 #endif
 
   for (int i = 0; i < 20; i++)
     {
+#if 1
       process.SetBinary ("unbound-host");
       process.ResetArguments ();
       process.ParseArguments ("ns1.ns3-dns.wide.ad.jp");
@@ -115,11 +123,16 @@ int main (int argc, char *argv[])
       process.ParseArguments ("A");
 //      process.ParseArguments ("-f");
 //      process.ParseArguments ("/etc/root.key");
+#else
+      process.SetBinary ("nslookup");
+      process.ResetArguments ();
+      process.ParseArguments ("ns1.ns3-dns.wide.ad.jp");
+#endif
+      process.SetStackSize (1<<16);
       apps = process.Install (nodes.Get (1));
 
       apps.Start (Seconds (1+ 10*i));
     }
-
 
   Simulator::Stop (Seconds (2000000.0));
   Simulator::Run ();
