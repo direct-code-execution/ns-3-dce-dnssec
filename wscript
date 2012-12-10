@@ -16,6 +16,8 @@ def configure(conf):
     ns3waf.check_modules(conf, ['point-to-point', 'tap-bridge', 'csma'], mandatory = False)
     ns3waf.check_modules(conf, ['dce'], mandatory = True)
     conf.check_tool('compiler_cc')
+    conf.env.append_value('LINKFLAGS', '-Wl,--dynamic-linker=' +
+                          os.path.abspath (conf.env.PREFIX + '/lib/ldso'))
     ns3waf.print_feature_summary(conf)
     
 def build_dce_tests(module, bld):
