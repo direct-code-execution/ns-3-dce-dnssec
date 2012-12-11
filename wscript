@@ -31,9 +31,11 @@ def build_dce_examples(module, bld):
 def build(bld):    
     module_source = [
         'helper/bind9-helper.cc',
+        'helper/unbound-helper.cc',
         ]
     module_headers = [
         'helper/bind9-helper.h',
+        'helper/unbound-helper.h',
         ]
     uselib = ns3waf.modules_uselib(bld, ['dce'])
     module = ns3waf.create_module(bld, name='dce-dnssec',

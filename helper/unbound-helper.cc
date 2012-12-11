@@ -36,7 +36,8 @@ public:
   UnboundConfig ()
     : m_debug (false),
       m_usemanualconf (false),
-      m_binary ("named")
+      m_binary ("unbound-host"),
+      m_forwarder ("8.8.8.8 (need to configure:XXX)")
   {
   }
   ~UnboundConfig ()
@@ -61,6 +62,7 @@ public:
   bool m_debug;
   bool m_usemanualconf;
   std::string m_binary;
+  Ipv4Address m_forwarder;
 
   virtual void
   Print (std::ostream& os) const
@@ -87,6 +89,22 @@ UnboundHelper::SetAttribute (std::string name, const AttributeValue &value)
 {
 }
 
+
+void
+UnboundHelper::SetForwarder (NodeContainer nodes, Ipv4Address fwd)
+{
+  for (uint32_t i = 0; i < nodes.GetN (); i++)
+    {
+      Ptr<UnboundConfig> unbound_conf = nodes.Get (i)->GetObject<UnboundConfig> ();
+      if (!unbound_conf)
+        {
+          unbound_conf = CreateObject<UnboundConfig> ();
+          nodes.Get (i)->AggregateObject (unbound_conf);
+        }
+      unbound_conf->m_forwarder = fwd;
+    }
+  return;
+}
 
 void
 UnboundHelper::EnableDebug (NodeContainer nodes)
@@ -147,42 +165,56 @@ UnboundHelper::GenerateConfig (Ptr<Node> node)
     }
 
   // config generation
-  std::stringstream conf_dir, conf_file, varrun_dir;
+  std::stringstream conf_dir, conf_file;
   // FIXME XXX
   conf_dir << "files-" << node->GetId () << "";
   ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
   conf_dir << "/etc/";
   ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
-  conf_dir << "/namedb/";
-  ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
 
-  varrun_dir << "files-" << node->GetId () << "";
-  varrun_dir << "/var/";
-  ::mkdir (varrun_dir.str ().c_str (), S_IRWXU | S_IRWXG);
-  varrun_dir << "/run";
-  ::mkdir (varrun_dir.str ().c_str (), S_IRWXU | S_IRWXG);
-
-  conf_file << conf_dir.str () << "/named.conf";
+  conf_file << conf_dir.str () << "/unbound.conf";
   std::ofstream conf;
   conf.open (conf_file.str ().c_str ());
-
-  conf << "options {"  << std::endl;
-  conf << "  directory \"/etc/namedb\";"  << std::endl;
-  conf << "  pid-file \"/var/run/named.pid\";"  << std::endl;
-  conf << "  listen-on { any; };"  << std::endl;
-  conf << "  listen-on-v6 { none; };"  << std::endl;
-  conf << "};"  << std::endl;
-
   conf << *unbound_conf;
   conf.close ();
 
   conf_file.str ("");
-  conf_file << "files-" << node->GetId () << "/etc/passwd";
+  conf_file << "files-" << node->GetId () << "/etc/resolv.conf";
   conf.open (conf_file.str ().c_str ());
-  conf << "deadcode;deadcode;deadcode;deadcode;deadcode;deadcode;" << std::endl;
+  conf << "nameserver " << unbound_conf->m_forwarder << std::endl;
   conf.close ();
 }
 
+void
+UnboundHelper::SendQuery (Ptr<Node> node, Time at, std::string query)
+{
+  DceApplicationHelper process;
+  ApplicationContainer apps;
+  Ptr<UnboundConfig> unbound_conf = node->GetObject<UnboundConfig> ();
+  if (!unbound_conf)
+    {
+      unbound_conf = new UnboundConfig ();
+      node->AggregateObject (unbound_conf);
+    }
+
+  process.SetBinary ("unbound-host");
+  process.ResetArguments ();
+  process.ParseArguments (query);
+  process.ParseArguments ("-r");
+  //      process.ParseArguments ("-C /etc/unbound.conf");
+  process.ParseArguments ("-t");
+  process.ParseArguments ("A");
+  //      process.ParseArguments ("-f");
+  //      process.ParseArguments ("/etc/root.key");
+  if (unbound_conf->m_debug)
+    {
+      process.ParseArguments ("-d -d -v");
+    }
+  process.SetStackSize (1<<16);
+  apps = process.Install (node);
+  apps.Start (at);
+  return;
+}
 
 ApplicationContainer
 UnboundHelper::Install (Ptr<Node> node)
@@ -225,13 +257,15 @@ UnboundHelper::InstallPriv (Ptr<Node> node)
 
   process.ResetArguments ();
   process.SetBinary (unbound_conf->m_binary);
-  process.ParseArguments ("-f -d 8 -4 -u root");
-  process.ParseArguments ("-c /etc/namedb/named.conf");
+  if (unbound_conf->m_debug)
+    {
+      process.ParseArguments ("-d -d -v");
+    }
+  process.ParseArguments ("-r");
   process.SetStackSize (1 << 16);
   apps.Add (process.Install (node));
   apps.Get (0)->SetStartTime (Seconds (1.0 + 0.01 * node->GetId ()));
   node->AddApplication (apps.Get (0));
-
   return apps;
 }
 

@@ -38,6 +38,7 @@ public:
       m_usemanualconf (false),
       m_binary ("named")
   {
+    m_zones = new std::vector<std::string> ();
   }
   ~Bind9Config ()
   {
@@ -61,6 +62,7 @@ public:
   bool m_debug;
   bool m_usemanualconf;
   std::string m_binary;
+  std::vector<std::string> *m_zones;
 
   virtual void
   Print (std::ostream& os) const
@@ -87,6 +89,20 @@ Bind9Helper::SetAttribute (std::string name, const AttributeValue &value)
 {
 }
 
+
+void
+Bind9Helper::AddZone (Ptr<Node> node, std::string zone_name)
+{
+  Ptr<Bind9Config> bind9_conf = node->GetObject<Bind9Config> ();
+  if (!bind9_conf)
+    {
+      bind9_conf = CreateObject<Bind9Config> ();
+      node->AggregateObject (bind9_conf);
+    }
+
+  bind9_conf->m_zones->push_back (zone_name);
+  return;
+}
 
 void
 Bind9Helper::EnableDebug (NodeContainer nodes)
@@ -147,7 +163,7 @@ Bind9Helper::GenerateConfig (Ptr<Node> node)
     }
 
   // config generation
-  std::stringstream conf_dir, conf_file, varrun_dir;
+  std::stringstream conf_dir, conf_file, varrun_dir, zone_file;
   // FIXME XXX
   conf_dir << "files-" << node->GetId () << "";
   ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
@@ -162,8 +178,9 @@ Bind9Helper::GenerateConfig (Ptr<Node> node)
   varrun_dir << "/run";
   ::mkdir (varrun_dir.str ().c_str (), S_IRWXU | S_IRWXG);
 
+  // generate /etc/namedb/named.conf
   conf_file << conf_dir.str () << "/named.conf";
-  std::ofstream conf;
+  std::ofstream conf, zonef;
   conf.open (conf_file.str ().c_str ());
 
   conf << "options {"  << std::endl;
@@ -173,9 +190,41 @@ Bind9Helper::GenerateConfig (Ptr<Node> node)
   conf << "  listen-on-v6 { none; };"  << std::endl;
   conf << "};"  << std::endl;
 
+  // zone information
+  for (std::vector<std::string>::iterator i = bind9_conf->m_zones->begin ();
+       i != bind9_conf->m_zones->end (); ++i)
+    {
+      if (i != bind9_conf->m_zones->begin ())
+        {
+          conf << "," ;
+        }
+      conf << "zone \"" <<  (*i) << "\" {" << std::endl;
+      conf << "      type master;" << std::endl;
+      conf << "      file \"" << (*i) << "zone\";" << std::endl;
+      conf << "};" << std::endl;
+
+      // /etc/namedb/{zonefile}
+      zone_file << conf_dir.str () << "/" << (*i) << "zone";
+      zonef.open (zone_file.str ().c_str ());
+      zonef << "$ORIGIN ." << std::endl;
+      zonef << "$TTL 100" << std::endl;
+      zonef << (*i) << "\t IN SOA " << (*i) << " sho." << (*i) << " (" << std::endl;
+      zonef << "                                1  ; serial" << std::endl;
+      zonef << "                                1800       ; refresh (30 minutes)" << std::endl;
+      zonef << "                                900        ; retry (15 minutes)" << std::endl;
+      zonef << "                                604800     ; expire (1 week)" << std::endl;
+      zonef << "                                10800      ; minimum (3 hours)" << std::endl;
+      zonef << "                                )" << std::endl;
+      zonef << "  NS      ns1." <<  (*i) << std::endl << std::endl ;
+      zonef << "$ORIGIN " << (*i) << std::endl;
+      zonef << "ns1                     IN A    10.0.0.2" << std::endl;
+      zonef.close ();
+    }
+
   conf << *bind9_conf;
   conf.close ();
 
+  // fake /etc/passwd
   conf_file.str ("");
   conf_file << "files-" << node->GetId () << "/etc/passwd";
   conf.open (conf_file.str ().c_str ());

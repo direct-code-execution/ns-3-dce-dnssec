@@ -34,12 +34,12 @@ int main (int argc, char *argv[])
                            "ErrorRate", DoubleValue (0.00001));
   devices.Get (1)->SetAttribute ("ReceiveErrorModel", PointerValue (em));
 */
-  p2p.EnablePcapAll ("process-unbound");
+  p2p.EnablePcapAll ("dce-dns-simple");
 
   DceManagerHelper processManager;
   LinuxStackHelper stack;
-  //processManager.SetLoader ("ns3::DlmLoaderFactory");
   processManager.SetLoader ("ns3::CoojaLoaderFactory");
+  //  processManager.SetLoader ("ns3::DlmLoaderFactory");
   if (m_delay)
     {
       processManager.SetDelayModel ("ns3::TimeOfDayProcessDelayModel");
@@ -60,40 +60,22 @@ int main (int argc, char *argv[])
   DceApplicationHelper process;
   ApplicationContainer apps;
 
-#if 0
-  process.SetBinary ("unbound");
-  process.ResetArguments ();
-  process.ParseArguments ("-d");
-  process.SetStackSize (1<<16);
-  apps = process.Install (nodes.Get (0));
-  apps.Start (Seconds (1.0));
-#else
   Bind9Helper bind9;
   //bind9.UseManualConfig (nodes.Get (0));
+  bind9.AddZone (nodes.Get (0), "ns3-dns.wide.ad.jp.");
   bind9.Install (nodes.Get (0));
-#endif
 
+  UnboundHelper unbound;
+  // node0 is forwarder
+  unbound.SetForwarder (nodes.Get (1), interfaces.GetAddress (0, 0));
+  unbound.Install (nodes.Get (1));
   for (int i = 0; i < 20; i++)
     {
-      process.SetBinary ("unbound-host");
-      process.ResetArguments ();
-      process.ParseArguments ("ns1.ns3-dns.wide.ad.jp");
-      process.ParseArguments ("-d");
-      process.ParseArguments ("-d");
-      process.ParseArguments ("-v");
-      process.ParseArguments ("-r");
-      //      process.ParseArguments ("-C /etc/unbound.conf");
-      process.ParseArguments ("-t");
-      process.ParseArguments ("A");
-//      process.ParseArguments ("-f");
-//      process.ParseArguments ("/etc/root.key");
-      process.SetStackSize (1<<16);
-      apps = process.Install (nodes.Get (1));
-
-      apps.Start (Seconds (1+ 10*i));
+      unbound.SendQuery (nodes.Get (1), Seconds (1+ 10*i), 
+			 "ns1.ns3-dns.wide.ad.jp");
     }
 
-  Simulator::Stop (Seconds (2000000.0));
+  Simulator::Stop (Seconds (400.0));
   Simulator::Run ();
   Simulator::Destroy ();
 

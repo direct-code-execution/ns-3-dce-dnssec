@@ -86,6 +86,7 @@ public:
   void EnableDebug (NodeContainer nodes);
   void UseManualConfig (NodeContainer nodes);
   void SetBinary (NodeContainer nodes, std::string binary);
+  void AddZone (Ptr<Node> node, std::string zone_name);
 
 private:
   /**
