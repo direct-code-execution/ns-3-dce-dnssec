@@ -44,10 +44,10 @@ int main (int argc, char *argv[])
   NodeContainer nodes;
   fakeRoot.Create (1);
   trustAuth.Create (1);
-  subAuth.Create (1);
+  subAuth.Create (2);
   cacheSv.Create (1);
   client.Create (nNodes);
-  nodes = NodeContainer (trustAuth, subAuth, fakeRoot, cacheSv, client);
+  nodes = NodeContainer (fakeRoot, trustAuth, subAuth, cacheSv, client);
 
   NetDeviceContainer devices;
 
@@ -79,7 +79,8 @@ int main (int argc, char *argv[])
 
   for (int n=0; n < nodes.GetN (); n++)
     {
-      AddAddress (nodes.Get (n), Seconds (0.1), "sim0", "10.0.0.", 1 + n, "/8" );
+      AddAddress (nodes.Get (n), Seconds (0.1), "sim0", "10.0.0.", 1 + n, "/8");
+      AddAddress (nodes.Get (n), Seconds (0.1), "sim0", "192.168.255.", 51 + n, "/24");
       RunIp (nodes.Get (n), Seconds (0.2), "link set sim0 up");
       // RunIp (nodes.Get (n), Seconds (0.2), "link show");
       // RunIp (nodes.Get (n), Seconds (0.3), "route show table all");
@@ -105,11 +106,17 @@ int main (int argc, char *argv[])
   // 
   // Authority Server of Sub-Domain Configuration (node 2)
   // 
-  bind9.UseManualConfig (subAuth);
-  bind9.Install (subAuth);
+  bind9.UseManualConfig (subAuth.Get (0));
+  bind9.Install (subAuth.Get (0));
 
   // 
   // Cache Server Configuration (node 3)
+  // 
+  bind9.UseManualConfig (subAuth.Get (1));
+  bind9.Install (subAuth.Get (1));
+
+  // 
+  // Cache Server Configuration (node 4)
   // 
   bind9.UseManualConfig (cacheSv);
   bind9.Install (cacheSv);
@@ -119,16 +126,20 @@ int main (int argc, char *argv[])
   // process.Install (cacheSv);
 
   // 
-  // Client Configuration (node 4 - n)
+  // Client Configuration (node 5 - n)
   // 
+  // unbound.SendQuery (cacheSv.Get (0), Seconds (10), 
+  // 		     "mail.example.org");
   for (int i = 0; i < nNodes; i++)
     {
       // node3 is forwarder
-      unbound.SetForwarder (client.Get (i), "10.0.0.4");
+      unbound.SetForwarder (client.Get (i), "10.0.0.5");
       for (int j = 0; j < 20; j++)
 	{
 	  unbound.SendQuery (client.Get (i), Seconds (1+ 10*j), 
-			     "ns.example.org");
+	   		     "mail.example.org.");
+	  unbound.SendQuery (client.Get (i), Seconds (1+ 10*j), 
+	   		     "ns.second.example.org");
 	}
       unbound.Install (client.Get (i));
 

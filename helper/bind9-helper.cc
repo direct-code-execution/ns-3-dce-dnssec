@@ -275,7 +275,7 @@ Bind9Helper::InstallPriv (Ptr<Node> node)
   process.ResetArguments ();
   process.SetBinary (bind9_conf->m_binary);
   process.ParseArguments ("-f -d 8 -4 -u root");
-  process.ParseArguments ("-c /etc/namedb/named.conf");
+  process.ParseArguments ("-c /tmp/namedb/named.conf");
   process.SetStackSize (1 << 16);
   apps.Add (process.Install (node));
   apps.Get (0)->SetStartTime (Seconds (1.0 + 0.01 * node->GetId ()));

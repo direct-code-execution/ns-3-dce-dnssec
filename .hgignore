@@ -13,3 +13,4 @@ glob:**/files-*
 ^ccnx-*
 ^doc/build
 ^NetAnim
+createzone
