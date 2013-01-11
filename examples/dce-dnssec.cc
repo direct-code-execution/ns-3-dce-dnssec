@@ -5,6 +5,7 @@
 #include "ns3/csma-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/mobility-module.h"
+#include "ns3/dce-dnssec-module.h"
 #include <fstream>
 
 using namespace ns3;
@@ -36,7 +37,7 @@ int main (int argc, char *argv[])
 {
   CommandLine cmd;
   cmd.AddValue ("delay", "add process delay (default 1)", m_delay);
-  cmd.AddValue ("nNodes", "the number of client nodes (default 2)", nNodes);
+  cmd.AddValue ("nNodes", "the number of client nodes (default 1)", nNodes);
   cmd.Parse (argc, argv);
 
   NodeContainer trustAuth, subAuth, fakeRoot, cacheSv, client;
@@ -66,7 +67,9 @@ int main (int argc, char *argv[])
   //processManager.SetLoader ("ns3::DlmLoaderFactory");
   if (m_delay)
     {
+#if 0
       processManager.SetDelayModel ("ns3::TimeOfDayProcessDelayModel");
+#endif
     }
   processManager.SetTaskManagerAttribute ("FiberManagerType",
                                           EnumValue (0));
@@ -76,7 +79,8 @@ int main (int argc, char *argv[])
 
   for (int n=0; n < nodes.GetN (); n++)
     {
-      AddAddress (nodes.Get (n), Seconds (0.1), "sim0", "10.0.0.", 2 + n, "/8" );
+      AddAddress (nodes.Get (n), Seconds (0.1), "sim0", "10.0.0.", 1 + n, "/8" );
+      RunIp (nodes.Get (n), Seconds (0.2), "link set sim0 up");
       // RunIp (nodes.Get (n), Seconds (0.2), "link show");
       // RunIp (nodes.Get (n), Seconds (0.3), "route show table all");
       // RunIp (nodes.Get (n), Seconds (0.4), "addr list");
@@ -84,88 +88,50 @@ int main (int argc, char *argv[])
 
   DceApplicationHelper process;
   ApplicationContainer apps;
+  Bind9Helper bind9;
+  UnboundHelper unbound;
   // 
   // FakeRoot Configuration (node 0)
   // 
-  process.SetBinary ("named");
-  process.ResetArguments ();
-  process.ParseArguments ("-f");
-  process.ParseArguments ("-d");
-  process.ParseArguments ("8");
-  process.ParseArguments ("-4");
-  process.ParseArguments ("-u");
-  process.ParseArguments ("root");
-  process.ParseArguments ("-c");
-  process.ParseArguments ("/etc/namedb/named.conf");
-  process.SetStackSize (1<<16);
-  apps = process.Install (fakeRoot);
-  apps.Start (Seconds (1.0));
+  bind9.UseManualConfig (fakeRoot);
+  bind9.Install (fakeRoot);
 
   // 
   // Tursted Anthor Authority Server Configuration (node 1)
   // 
-  process.SetBinary ("named");
-  process.ResetArguments ();
-  process.ParseArguments ("-f");
-  process.ParseArguments ("-d");
-  process.ParseArguments ("8");
-  process.ParseArguments ("-4");
-  process.ParseArguments ("-u");
-  process.ParseArguments ("root");
-  process.ParseArguments ("-c");
-  process.ParseArguments ("/etc/namedb/named.conf");
-  process.SetStackSize (1<<16);
-  apps = process.Install (trustAuth);
-  apps.Start (Seconds (1.0));
+  bind9.UseManualConfig (trustAuth);
+  bind9.Install (trustAuth);
 
   // 
   // Authority Server of Sub-Domain Configuration (node 2)
   // 
-  process.SetBinary ("named");
-  process.ResetArguments ();
-  process.ParseArguments ("-f");
-  process.ParseArguments ("-d");
-  process.ParseArguments ("8");
-  process.ParseArguments ("-4");
-  process.ParseArguments ("-u");
-  process.ParseArguments ("root");
-  process.ParseArguments ("-c");
-  process.ParseArguments ("/etc/namedb/named.conf");
-  process.SetStackSize (1<<16);
-  apps = process.Install (subAuth);
-  apps.Start (Seconds (1.0));
+  bind9.UseManualConfig (subAuth);
+  bind9.Install (subAuth);
 
   // 
   // Cache Server Configuration (node 3)
   // 
-  process.SetBinary ("unbound");
-  process.ResetArguments ();
-  process.ParseArguments ("-d");
-  process.ParseArguments ("-c");
-  process.ParseArguments ("/etc/unbound.conf");
-  process.SetStackSize (1<<16);
-  apps = process.Install (cacheSv);
-  apps.Start (Seconds (1.0));
-
+  bind9.UseManualConfig (cacheSv);
+  bind9.Install (cacheSv);
+  // process.SetBinary ("unbound");
+  // process.ResetArguments ();
+  // process.SetStackSize (1<<16);
+  // process.Install (cacheSv);
 
   // 
   // Client Configuration (node 4 - n)
   // 
   for (int i = 0; i < nNodes; i++)
     {
-      process.SetBinary ("unbound-host");
-      process.ResetArguments ();
-      process.ParseArguments ("ns1.ns3-dns.wide.ad.jp");
-      process.ParseArguments ("-d");
-      process.ParseArguments ("-d");
-      process.ParseArguments ("-v");
-      process.ParseArguments ("-r");
-      process.ParseArguments ("-t");
-      process.ParseArguments ("A");
-//      process.ParseArguments ("-f");
-//      process.ParseArguments ("/etc/root.key");
-      apps = process.Install (client.Get (i));
-      apps.Start (Seconds (1+ 10*i));
+      // node3 is forwarder
+      unbound.SetForwarder (client.Get (i), "10.0.0.4");
+      for (int j = 0; j < 20; j++)
+	{
+	  unbound.SendQuery (client.Get (i), Seconds (1+ 10*j), 
+			     "ns.example.org");
+	}
+      unbound.Install (client.Get (i));
+
     }
 
 

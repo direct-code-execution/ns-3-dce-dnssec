@@ -28,6 +28,10 @@ def build_dce_examples(module, bld):
                        target='bin/dce-dns-simple',
                        source=['examples/dce-dns-simple.cc'])
 
+    module.add_example(needed = ['core', 'network', 'dce', 'csma', 'point-to-point', 'dce-dnssec'], 
+                       target='bin/dce-dnssec',
+                       source=['examples/dce-dnssec.cc'])
+
 def build(bld):    
     module_source = [
         'helper/bind9-helper.cc',
