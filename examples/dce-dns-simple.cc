@@ -11,6 +11,27 @@ using namespace ns3;
 
 bool m_delay = true;
 
+static void RunIp (Ptr<Node> node, Time at, std::string str)
+{
+  DceApplicationHelper process;
+  ApplicationContainer apps;
+  process.SetBinary ("ip");
+  process.SetStackSize (1<<16);
+  process.ResetArguments();
+  process.ParseArguments(str.c_str ());
+  apps = process.Install (node);
+  apps.Start (at);
+}
+
+static void AddAddress (Ptr<Node> node, Time at, const char *name, const std::string prefixAddr,
+                        int number, std::string suffixAddr)
+{
+  std::ostringstream oss;
+  oss << "-f inet addr add " << prefixAddr << number << suffixAddr << " dev " << name;
+  RunIp (node, at, oss.str ());
+}
+
+
 int main (int argc, char *argv[])
 {
   CommandLine cmd;
@@ -35,23 +56,23 @@ int main (int argc, char *argv[])
   p2p.EnablePcapAll ("dce-dns-simple");
 
   DceManagerHelper processManager;
-  LinuxStackHelper stack;
   processManager.SetLoader ("ns3::CoojaLoaderFactory");
   //  processManager.SetLoader ("ns3::DlmLoaderFactory");
   if (m_delay)
     {
-      processManager.SetDelayModel ("ns3::TimeOfDayProcessDelayModel");
+      // processManager.SetDelayModel ("ns3::TimeOfDayProcessDelayModel");
     }
   processManager.SetTaskManagerAttribute ("FiberManagerType",
                                           EnumValue (0));
   processManager.SetNetworkStack("ns3::LinuxSocketFdFactory",
 				 "Library", StringValue ("libnet-next-2.6.so"));
 
-  stack.Install (nodes);
   // Assign address
-  Ipv4AddressHelper address;
-  address.SetBase ("10.0.0.0", "255.255.255.0");
-  Ipv4InterfaceContainer interfaces = address.Assign (devices);
+  for (int n=0; n < nodes.GetN (); n++)
+    {
+      AddAddress (nodes.Get (n), Seconds (0.1), "sim0", "10.0.0.", 1 + n, "/24");
+      RunIp (nodes.Get (n), Seconds (0.2), "link set sim0 up");
+    }
 
   processManager.Install (nodes);
 
@@ -65,7 +86,7 @@ int main (int argc, char *argv[])
 
   UnboundHelper unbound;
   // node0 is forwarder
-  unbound.SetForwarder (nodes.Get (1), interfaces.GetAddress (0, 0));
+  unbound.SetForwarder (nodes.Get (1), "10.0.0.1");
   unbound.Install (nodes.Get (1));
   for (int i = 0; i < 20; i++)
     {
