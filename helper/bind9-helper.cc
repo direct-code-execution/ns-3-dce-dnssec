@@ -25,6 +25,7 @@
 #include <fstream>
 #include <map>
 #include <sys/stat.h>
+#include <ruby.h>
 
 namespace ns3 {
 
@@ -36,7 +37,8 @@ public:
   Bind9Config ()
     : m_debug (false),
       m_usemanualconf (false),
-      m_binary ("named")
+      m_binary ("named"),
+      m_iscache (false)
   {
     m_zones = new std::vector<std::string> ();
   }
@@ -63,6 +65,8 @@ public:
   bool m_usemanualconf;
   std::string m_binary;
   std::vector<std::string> *m_zones;
+  std::string m_nsaddr;
+  bool m_iscache;
 
   virtual void
   Print (std::ostream& os) const
@@ -82,6 +86,9 @@ std::ostream& operator << (std::ostream& os, Bind9Config const& config)
 
 Bind9Helper::Bind9Helper ()
 {
+  ruby_init();
+  ruby_init_loadpath();
+  // ruby_cleanup(0);
 }
 
 void
@@ -101,6 +108,34 @@ Bind9Helper::AddZone (Ptr<Node> node, std::string zone_name)
     }
 
   bind9_conf->m_zones->push_back (zone_name);
+  return;
+}
+
+void
+Bind9Helper::SetNsAddr (Ptr<Node> node, std::string nsaddr)
+{
+  Ptr<Bind9Config> bind9_conf = node->GetObject<Bind9Config> ();
+  if (!bind9_conf)
+    {
+      bind9_conf = CreateObject<Bind9Config> ();
+      node->AggregateObject (bind9_conf);
+    }
+
+  bind9_conf->m_nsaddr = nsaddr;
+  return;
+}
+
+void
+Bind9Helper::SetCacheServer (Ptr<Node> node)
+{
+  Ptr<Bind9Config> bind9_conf = node->GetObject<Bind9Config> ();
+  if (!bind9_conf)
+    {
+      bind9_conf = CreateObject<Bind9Config> ();
+      node->AggregateObject (bind9_conf);
+    }
+
+  bind9_conf->m_iscache = true;
   return;
 }
 
@@ -167,7 +202,7 @@ Bind9Helper::GenerateConfig (Ptr<Node> node)
   // FIXME XXX
   conf_dir << "files-" << node->GetId () << "";
   ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
-  conf_dir << "/etc/";
+  conf_dir << "/tmp/";
   ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
   conf_dir << "/namedb/";
   ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
@@ -178,17 +213,29 @@ Bind9Helper::GenerateConfig (Ptr<Node> node)
   varrun_dir << "/run";
   ::mkdir (varrun_dir.str ().c_str (), S_IRWXU | S_IRWXG);
 
-  // generate /etc/namedb/named.conf
+  // generate /tmp/namedb/named.conf
   conf_file << conf_dir.str () << "/named.conf";
   std::ofstream conf, zonef;
   conf.open (conf_file.str ().c_str ());
 
   conf << "options {"  << std::endl;
-  conf << "  directory \"/etc/namedb\";"  << std::endl;
+  conf << "  directory \"/tmp/namedb\";"  << std::endl;
   conf << "  pid-file \"/var/run/named.pid\";"  << std::endl;
   conf << "  listen-on { any; };"  << std::endl;
   conf << "  listen-on-v6 { none; };"  << std::endl;
+  if (bind9_conf->m_iscache)
+    {
+      conf << "  recursion yes;"  << std::endl;
+    }
   conf << "};"  << std::endl;
+
+  if (bind9_conf->m_iscache)
+    {
+      conf << "zone \".\" {"  << std::endl;
+      conf << "        type hint;"  << std::endl;
+      conf << "        file \"named.root\";"  << std::endl;
+      conf << "};"  << std::endl;
+    }
 
   // zone information
   for (std::vector<std::string>::iterator i = bind9_conf->m_zones->begin ();
@@ -203,7 +250,7 @@ Bind9Helper::GenerateConfig (Ptr<Node> node)
       conf << "      file \"" << (*i) << "zone\";" << std::endl;
       conf << "};" << std::endl;
 
-      // /etc/namedb/{zonefile}
+      // /tmp/namedb/{zonefile}
       zone_file << conf_dir.str () << "/" << (*i) << "zone";
       zonef.open (zone_file.str ().c_str ());
       zonef << "$ORIGIN ." << std::endl;
@@ -224,14 +271,71 @@ Bind9Helper::GenerateConfig (Ptr<Node> node)
   conf << *bind9_conf;
   conf.close ();
 
+  // named.root
+  if (bind9_conf->m_iscache)
+    {
+      conf_file.str ("");
+      conf_file << conf_dir.str () << "/named.root";
+      std::ofstream rootf;
+      rootf.open (conf_file.str ().c_str ());
+      rootf << ".                        3600000  IN  NS    ns." << std::endl;
+      rootf << "ns.                      3600000      A  10.0.0.1" << std::endl;
+      rootf.close ();
+    }
+
   // fake /etc/passwd
   conf_file.str ("");
+  conf_dir.str ("");
+  conf_dir << "files-" << node->GetId () << "/etc";
+  ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
   conf_file << "files-" << node->GetId () << "/etc/passwd";
   conf.open (conf_file.str ().c_str ());
   conf << "deadcode;deadcode;deadcode;deadcode;deadcode;deadcode;" << std::endl;
   conf.close ();
 }
 
+void
+Bind9Helper::CreateZones (NodeContainer c)
+{
+  Ptr<Node> node;
+  std::ofstream conf;
+  conf.open ("./nsconfig.txt");
+
+  std::stringstream conf_dir;
+  for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
+    {
+      node = (*i);
+      Ptr<Bind9Config> bind9_conf = node->GetObject<Bind9Config> ();
+      // FIXME XXX
+      conf_dir.str ("");
+      conf_dir << "files-" << node->GetId () << "";
+      ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
+      conf_dir << "/tmp/";
+      ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
+      conf_dir << "/namedb/";
+      ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
+
+      if (!bind9_conf->m_zones->empty ())
+        {
+          conf << bind9_conf->m_nsaddr << " " << bind9_conf->m_nsaddr << " "
+               << *(bind9_conf->m_zones->begin ())
+               << " files-" << node->GetId () << std::endl;
+        }
+
+    }
+  conf.close ();
+
+  // call createzone.rb
+  int state;
+  rb_load_protect (rb_str_new2("createzones/createzones.rb"), 0, &state);
+  //  rb_load_protect (rb_str_new2("createzones/createzones.rb build/nsconfig.txt -o ./"), 0, &state);
+  if (state)
+    {
+      VALUE rbError = rb_funcall(rb_gv_get("$!"), rb_intern("message"), 0);
+      std::cerr << StringValuePtr(rbError) << std::endl;
+  }
+
+}
 
 ApplicationContainer
 Bind9Helper::Install (Ptr<Node> node)
@@ -250,6 +354,7 @@ ApplicationContainer
 Bind9Helper::Install (NodeContainer c)
 {
   ApplicationContainer apps;
+  CreateZones (c);
   for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
     {
       apps.Add (InstallPriv (*i));

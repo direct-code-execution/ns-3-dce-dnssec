@@ -14,3 +14,6 @@ glob:**/files-*
 ^doc/build
 ^NetAnim
 createzone
+zones
+bkup
+\.pyc$

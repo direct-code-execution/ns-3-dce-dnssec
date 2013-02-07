@@ -95,35 +95,37 @@ int main (int argc, char *argv[])
   // FakeRoot Configuration (node 0)
   // 
   bind9.UseManualConfig (fakeRoot);
-  bind9.Install (fakeRoot);
+  bind9.SetNsAddr (fakeRoot.Get (0), "10.0.0.1");
+  bind9.AddZone (fakeRoot.Get (0), ".");
 
   // 
   // Tursted Anthor Authority Server Configuration (node 1)
   // 
   bind9.UseManualConfig (trustAuth);
-  bind9.Install (trustAuth);
+  bind9.SetNsAddr (trustAuth.Get (0), "10.0.0.2");
+  bind9.AddZone (trustAuth.Get (0), "org");
 
   // 
   // Authority Server of Sub-Domain Configuration (node 2)
   // 
   bind9.UseManualConfig (subAuth.Get (0));
-  bind9.Install (subAuth.Get (0));
+  bind9.SetNsAddr (subAuth.Get (0), "10.0.0.3");
+  bind9.AddZone (subAuth.Get (0), "example.org");
 
   // 
   // Cache Server Configuration (node 3)
   // 
   bind9.UseManualConfig (subAuth.Get (1));
-  bind9.Install (subAuth.Get (1));
+  bind9.SetNsAddr (subAuth.Get (1), "10.0.0.4");
+  bind9.AddZone (subAuth.Get (1), "second.example.org");
 
   // 
   // Cache Server Configuration (node 4)
   // 
-  bind9.UseManualConfig (cacheSv);
-  bind9.Install (cacheSv);
-  // process.SetBinary ("unbound");
-  // process.ResetArguments ();
-  // process.SetStackSize (1<<16);
-  // process.Install (cacheSv);
+  //  bind9.UseManualConfig (cacheSv);
+  bind9.SetCacheServer (cacheSv.Get (0));
+
+  bind9.Install (NodeContainer (fakeRoot, trustAuth, subAuth, cacheSv));
 
   // 
   // Client Configuration (node 5 - n)

@@ -87,6 +87,9 @@ public:
   void UseManualConfig (NodeContainer nodes);
   void SetBinary (NodeContainer nodes, std::string binary);
   void AddZone (Ptr<Node> node, std::string zone_name);
+  void SetNsAddr (Ptr<Node> node, std::string nsaddr);
+  void CreateZones (NodeContainer c);
+  void SetCacheServer (Ptr<Node> node);
 
 private:
   /**
