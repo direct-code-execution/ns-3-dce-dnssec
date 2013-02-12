@@ -1,7 +1,7 @@
 #!/bin/sh
 
 LINK_DELAY=`seq 0 100 500`
-LOSS_RATIO=`seq 0 100 1000`
+LOSS_RATIO=`seq 0.1 0.05 0.2`
 QPS="1 10 50 100"
 CLIENT="1 10 20 30"
 

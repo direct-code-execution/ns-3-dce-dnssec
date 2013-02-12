@@ -176,7 +176,7 @@ int main (int argc, char *argv[])
   bind9.AddZone (subAuth.Get (0), "example.org");
 
   // 
-  // Cache Server Configuration (node 3)
+  // Authority Server of Sub-Domain Configuration (node 3)
   // 
   bind9.UseManualConfig (subAuth.Get (1));
   bind9.SetNsAddr (subAuth.Get (1), "10.0.0.4");
@@ -213,7 +213,7 @@ int main (int argc, char *argv[])
   Config::Connect ("/NodeList/*/DeviceList/0/$ns3::CsmaNetDevice/MacRx",
 		   MakeCallback (&CsmaRxCallback));
 
-  Simulator::Stop (Seconds (2000000.0));
+  Simulator::Stop (Seconds (2000.0));
   Simulator::Run ();
   Simulator::Destroy ();
 
