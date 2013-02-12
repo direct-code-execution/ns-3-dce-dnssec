@@ -34,6 +34,15 @@
       </build>
      </module>
 
+     <module name="createzone">
+       <source type="git">
+	 <attribute name="url" value="https://github.com/shored/createzones.git"/>
+       </source>
+       <build type="none" objdir="no">
+       </build>
+     </module>
+
+
     <module name="dce-dnssec">
       <source type="mercurial">
         <attribute name="url" value="http://zakzak.koganei.wide.ad.jp/~tazaki/outgoing/ns-3-dce-dnssec/"/>
@@ -42,8 +51,10 @@
       <depends_on name="bind9" optional="False"/>
       <depends_on name="unbound" optional="False"/>
       <depends_on name="dce-linux" optional="False"/>
+      <depends_on name="createzones" optional="False"/>
       <build type="waf" objdir="build">
 	<attribute name="configure_arguments" value="configure --prefix=$INSTALLDIR "/>
+	<attribute name="post_installation" value="cd $SRCDIR; git clone https://github.com/shored/createzones.git"/>
       </build>
     </module>
  
