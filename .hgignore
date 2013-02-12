@@ -17,3 +17,7 @@ createzone
 zones
 bkup
 \.pyc$
+\.pcap
+nsconfig.txt
+exitprocs
+core

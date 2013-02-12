@@ -6,9 +6,12 @@
 #include "ns3/wifi-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/dce-dnssec-module.h"
+#include "ns3/tcp-header.h"
+#include "ns3/udp-header.h"
 #include <fstream>
 
 using namespace ns3;
+NS_LOG_COMPONENT_DEFINE ("DceDnssec");
 
 static void RunIp (Ptr<Node> node, Time at, std::string str)
 {
@@ -30,14 +33,69 @@ static void AddAddress (Ptr<Node> node, Time at, const char *name, const std::st
   RunIp (node, at, oss.str ());
 }
 
+uint64_t tot53pkts = 0;
+void
+CsmaRxCallback (std::string context, Ptr<const Packet> originalPacket)
+{
+  Ptr<Packet> packet = originalPacket->Copy ();
+  EthernetHeader ethhdr;
+  Ipv4Header v4hdr;
+  TcpHeader tcpHdr;
+  UdpHeader udpHdr;
+
+  if (!packet->PeekHeader (ethhdr))
+    {
+      return;
+    }
+
+  packet->RemoveHeader (ethhdr);
+  // if not ipv4
+  if (ethhdr.GetLengthType () != 0x0800)
+    {
+      return;
+    }
+
+  if (packet->PeekHeader (v4hdr) != 0)
+    {
+      packet->RemoveHeader (v4hdr);
+      if (packet->PeekHeader (udpHdr) != 0)
+	{
+	  packet->RemoveHeader (udpHdr);
+	  if (udpHdr.GetDestinationPort () == 53 ||
+	      udpHdr.GetSourcePort () == 53)
+	    {
+	      NS_LOG_INFO ("received dns packet " << originalPacket->GetSize () << " bytes");
+	      tot53pkts += originalPacket->GetSize ();
+	    }
+	}
+      else if (packet->PeekHeader (tcpHdr) != 0)
+	{
+	  packet->RemoveHeader (tcpHdr);
+	  if (tcpHdr.GetDestinationPort () == 53 ||
+	      tcpHdr.GetSourcePort () == 53)
+	    {
+	      tot53pkts += originalPacket->GetSize ();
+	    }
+	}
+    }
+
+}
 bool m_delay = true;
-bool nNodes = 1;
+uint32_t nNodes = 1;
+bool enablePcap = false;
+std::string linkDelay = "1ms";
+double lossRatio = 0.00;
+uint32_t m_qps = 1;
 
 int main (int argc, char *argv[])
 {
   CommandLine cmd;
-  cmd.AddValue ("delay", "add process delay (default 1)", m_delay);
+  cmd.AddValue ("processDelay", "add process delay (default 1)", m_delay);
   cmd.AddValue ("nNodes", "the number of client nodes (default 1)", nNodes);
+  cmd.AddValue ("pcap", "enable Pcap output (default no)", enablePcap);
+  cmd.AddValue ("linkDelay", "configure each link delay (default 1ms)", linkDelay);
+  cmd.AddValue ("lossRatio", "configure each link packet loss ratio (default 0%)", lossRatio);
+  cmd.AddValue ("qps", "query per second (default 1qps)", m_qps);
   cmd.Parse (argc, argv);
 
   NodeContainer trustAuth, subAuth, fakeRoot, cacheSv, client;
@@ -53,23 +111,28 @@ int main (int argc, char *argv[])
 
   CsmaHelper csma;
   csma.SetChannelAttribute ("DataRate", StringValue ("500Mbps"));
-  csma.SetChannelAttribute ("Delay", StringValue ("1ms"));
+  csma.SetChannelAttribute ("Delay", StringValue (linkDelay));
   devices = csma.Install (nodes);
-/*
-  Ptr<RateErrorModel> em = CreateObjectWithAttributes<RateErrorModel> (
-                           "RanVar", RandomVariableValue (UniformVariable (0., 1.)),
-                           "ErrorRate", DoubleValue (0.00001));
+  // bottle neck link
+  Ptr<RateErrorModel> em;
+
+  em = CreateObjectWithAttributes<RateErrorModel>
+    ("RanVar", StringValue ("ns3::UniformRandomVariable[Min=0.0,Max=1.0]"),
+     "ErrorRate", DoubleValue (lossRatio),
+     "ErrorUnit", EnumValue (RateErrorModel::ERROR_UNIT_PACKET)
+     );
   devices.Get (1)->SetAttribute ("ReceiveErrorModel", PointerValue (em));
-*/
-  csma.EnablePcapAll ("process-dnssec");
+
+  if (enablePcap)
+    {
+      csma.EnablePcapAll ("dce-dnssec");
+    }
 
   DceManagerHelper processManager;
   //processManager.SetLoader ("ns3::DlmLoaderFactory");
   if (m_delay)
     {
-#if 0
       processManager.SetDelayModel ("ns3::TimeOfDayProcessDelayModel");
-#endif
     }
   processManager.SetTaskManagerAttribute ("FiberManagerType",
                                           EnumValue (0));
@@ -132,25 +195,29 @@ int main (int argc, char *argv[])
   // 
   // unbound.SendQuery (cacheSv.Get (0), Seconds (10), 
   // 		     "mail.example.org");
+
+  uint32_t numQuery = m_qps * 50;
   for (int i = 0; i < nNodes; i++)
     {
       // node3 is forwarder
       unbound.SetForwarder (client.Get (i), "10.0.0.5");
-      for (int j = 0; j < 20; j++)
+      for (int j = 0; j < numQuery; j++)
 	{
-	  unbound.SendQuery (client.Get (i), Seconds (1+ 10*j), 
+	  unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
 	   		     "mail.example.org.");
-	  unbound.SendQuery (client.Get (i), Seconds (1+ 10*j), 
-	   		     "ns.second.example.org");
 	}
       unbound.Install (client.Get (i));
 
     }
 
+  Config::Connect ("/NodeList/*/DeviceList/0/$ns3::CsmaNetDevice/MacRx",
+		   MakeCallback (&CsmaRxCallback));
 
   Simulator::Stop (Seconds (2000000.0));
   Simulator::Run ();
   Simulator::Destroy ();
+
+  std::cout << "Total message in network is " << tot53pkts << " bytes" << std::endl;
 
   return 0;
 }
