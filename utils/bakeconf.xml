@@ -6,7 +6,7 @@
         <attribute name="url" value="http://www.openssl.org/source/openssl-0.9.8x.tar.gz"/>
       </source>
       <build type="autotools" objdir="no">
-        <attribute name="configure_arguments" value="./config --prefix=$INSTALLDIR --openssldir=$INSTALLDIR  shared"/>
+        <attribute name="configure_arguments" value="./config --openssldir=./ --install-prefix=$INSTALLDIR/ shared"/>
       </build>
      </module>
 
