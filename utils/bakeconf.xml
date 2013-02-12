@@ -30,7 +30,7 @@
       <build type="autotools" objdir="no">
         <attribute name="configure_arguments" value="./configure CFLAGS=-fPIC LDFLAGS=-pie --prefix=$INSTALLDIR --disable-gost --with-ssl=$INSTALLDIR"/>
         <attribute name="install_arguments" value="-n" />
-        <attribute name="post_installation" value="cd $SRCDIR; /bin/cp .libs/unbound-host $INSTALLDIR/bin_dce;/bin/cp .libs/libunbound.so.2.1.1 $INSTALLDIR/lib"/>
+        <attribute name="post_installation" value="cd $SRCDIR; mkdir -p $INSTALLDIR/bin_dce; /bin/cp .libs/unbound-host $INSTALLDIR/bin_dce;/bin/cp .libs/libunbound.so.2.1.1 $INSTALLDIR/lib; cd $INSTALLDIR/lib; ln -s libunbound.so.2.1.1 libunbound.so.2"/>
       </build>
      </module>
 
@@ -43,8 +43,7 @@
       <depends_on name="unbound" optional="False"/>
       <depends_on name="dce-linux" optional="False"/>
       <build type="waf" objdir="build">
-	<attribute name="configure_arguments" value="configure --prefix=$INSTALLDIR"/>
-	<!-- attribute name="patch" value="$SRCDIR/../dce-dnssec/utils/dnssec.patch"/ -->
+	<attribute name="configure_arguments" value="configure --prefix=$INSTALLDIR "/>
       </build>
     </module>
  
@@ -113,6 +112,7 @@
        <depends_on name="iproute" optional="False"/>
        <depends_on name="ns-3-dev-dce" optional="False"/>
       <build type="waf" objdir="yes" sourcedir="dce">
+	<attribute name="patch" value="$SRCDIR/../dce-dnssec/utils/dnssec.patch"/>
 	<attribute name="configure_arguments" value="configure --prefix=$INSTALLDIR --enable-kernel-stack=$SRCDIR/../ns-3-linux"/>
 	<attribute name="post_installation" value="cd $SRCDIR; ./waf --run ns3test-dce"/>
       </build>
