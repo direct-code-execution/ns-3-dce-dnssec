@@ -51,7 +51,6 @@
       <depends_on name="bind9" optional="False"/>
       <depends_on name="unbound" optional="False"/>
       <depends_on name="dce-linux" optional="False"/>
-      <depends_on name="createzones" optional="False"/>
       <build type="waf" objdir="build">
 	<attribute name="configure_arguments" value="configure --prefix=$INSTALLDIR "/>
 	<attribute name="post_installation" value="cd $SRCDIR; git clone https://github.com/shored/createzones.git"/>
