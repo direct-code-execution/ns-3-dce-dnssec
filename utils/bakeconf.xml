@@ -116,6 +116,7 @@
     <module name="dce-linux">
       <source type="mercurial">
 	<attribute name="url" value="http://code.nsnam.org/furbani/ns-3-dce"/>
+	<attribute name="revision" value="e92279f7b625"/>
  	<attribute name="module_directory" value="dce"/>
      </source>
        <depends_on name="elf-loader" optional="False"/>

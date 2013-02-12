@@ -1,8 +1,6 @@
-# HG changeset patch
-# Parent c0e9a9b531bf25a8c95ce9ec25a556b4a724e00a
-diff -r c0e9a9b531bf -r de5b5da27f1b model/dce-credentials.cc
---- a/model/dce-credentials.cc	Mon Dec 10 13:00:36 2012 +0900
-+++ b/model/dce-credentials.cc	Mon Dec 10 19:38:18 2012 +0900
+diff -r e92279f7b625 model/dce-credentials.cc
+--- a/model/dce-credentials.cc	Mon Feb 11 17:03:15 2013 +0100
++++ b/model/dce-credentials.cc	Tue Feb 12 19:00:19 2013 +0900
 @@ -53,3 +53,15 @@
    int ret = eaccess (rPath.c_str (), mode);
    return ret;
@@ -19,10 +17,10 @@ diff -r c0e9a9b531bf -r de5b5da27f1b model/dce-credentials.cc
 +  return 0;
 +}
 +
-diff -r c0e9a9b531bf -r de5b5da27f1b model/dce-stdio.cc
---- a/model/dce-stdio.cc	Mon Dec 10 13:00:36 2012 +0900
-+++ b/model/dce-stdio.cc	Mon Dec 10 19:38:18 2012 +0900
-@@ -749,6 +749,16 @@
+diff -r e92279f7b625 model/dce-stdio.cc
+--- a/model/dce-stdio.cc	Mon Feb 11 17:03:15 2013 +0100
++++ b/model/dce-stdio.cc	Tue Feb 12 19:00:19 2013 +0900
+@@ -754,6 +754,16 @@
    va_end (ap);
    return retval;
  }
@@ -39,31 +37,32 @@ diff -r c0e9a9b531bf -r de5b5da27f1b model/dce-stdio.cc
  void dce___fpurge (FILE *stream)
  {
    NS_LOG_FUNCTION (Current () << UtilsGetNodeId () << stream);
-diff -r c0e9a9b531bf -r de5b5da27f1b model/dce-stdio.h
---- a/model/dce-stdio.h	Mon Dec 10 13:00:36 2012 +0900
-+++ b/model/dce-stdio.h	Mon Dec 10 19:38:18 2012 +0900
-@@ -64,6 +64,9 @@
- 					   __const char *__restrict __format, ...);
- int dce___snprintf_chk (char *__restrict __s, size_t __n, int __flag,
- 						size_t __slen, __const char *__restrict __format, ...);
+diff -r e92279f7b625 model/dce-stdio.h
+--- a/model/dce-stdio.h	Mon Feb 11 17:03:15 2013 +0100
++++ b/model/dce-stdio.h	Tue Feb 12 19:00:19 2013 +0900
+@@ -71,6 +71,10 @@
+ int dce_asprintf (char **strp, const char *fmt, ...);
+ int dce_vasprintf (char **strp, const char *fmt, va_list ap);
+ int dce_vsnprintf (char *s, size_t si, const char *f, va_list ap);
 +int dce___vsnprintf_chk (char *__restrict __s, size_t __n, int __flag,
-+						size_t __slen,
++                                               size_t __slen,
 +                         __const char *__restrict __format, _G_va_list __ap);
++
  
- void dce___fpurge (FILE *stream);
- size_t dce___fpending (FILE *stream);
-diff -r c0e9a9b531bf -r de5b5da27f1b model/dce-syslog.cc
---- a/model/dce-syslog.cc	Mon Dec 10 13:00:36 2012 +0900
-+++ b/model/dce-syslog.cc	Mon Dec 10 19:38:18 2012 +0900
+ #ifdef __cplusplus
+ }
+diff -r e92279f7b625 model/dce-syslog.cc
+--- a/model/dce-syslog.cc	Mon Feb 11 17:03:15 2013 +0100
++++ b/model/dce-syslog.cc	Tue Feb 12 19:00:19 2013 +0900
 @@ -66,4 +66,5 @@
    Process *process = Current ()->process;
  
    vfprintf (process->syslog, message, args);
 +  fprintf (process->syslog, "\n");
  }
-diff -r c0e9a9b531bf -r de5b5da27f1b model/dce-unistd.h
---- a/model/dce-unistd.h	Mon Dec 10 13:00:36 2012 +0900
-+++ b/model/dce-unistd.h	Mon Dec 10 19:38:18 2012 +0900
+diff -r e92279f7b625 model/dce-unistd.h
+--- a/model/dce-unistd.h	Mon Feb 11 17:03:15 2013 +0100
++++ b/model/dce-unistd.h	Tue Feb 12 19:00:19 2013 +0900
 @@ -76,6 +76,8 @@
  
  ssize_t dce_pread (int fd, void *buf, size_t count, off_t offset);
@@ -73,9 +72,9 @@ diff -r c0e9a9b531bf -r de5b5da27f1b model/dce-unistd.h
  
  int dce_daemon (int nochdir, int noclose);
  
-diff -r c0e9a9b531bf -r de5b5da27f1b model/libc-dce.cc
---- a/model/libc-dce.cc	Mon Dec 10 13:00:36 2012 +0900
-+++ b/model/libc-dce.cc	Mon Dec 10 19:38:18 2012 +0900
+diff -r e92279f7b625 model/libc-dce.cc
+--- a/model/libc-dce.cc	Mon Feb 11 17:03:15 2013 +0100
++++ b/model/libc-dce.cc	Tue Feb 12 19:00:19 2013 +0900
 @@ -96,6 +96,7 @@
  #include <langinfo.h>
  #include <sys/vfs.h>
@@ -83,23 +82,19 @@ diff -r c0e9a9b531bf -r de5b5da27f1b model/libc-dce.cc
 +#include <assert.h>
  
  extern void __cxa_finalize (void *d);
- extern int __cxa_atexit (void (*func) (void *), void *arg, void *d);
-@@ -137,9 +138,11 @@
- extern int __obstack_vprintf_chk (struct obstack *, int, const char *,
-                   _G_va_list) __THROW;
- 
-+
- typedef void (*func_t) (...);
+ extern int __cxa_atexit (void (*func)(void *), void *arg, void *d);
+@@ -140,6 +141,7 @@
+ typedef void (*func_t)(...);
  
  extern "C" {
 +extern void *__memcpy_chk(void *dest, const void *src, size_t n, size_t __destlen);
  
  void libc_dce (struct Libc **libc)
  {
-diff -r c0e9a9b531bf -r de5b5da27f1b model/libc-ns3.h
---- a/model/libc-ns3.h	Mon Dec 10 13:00:36 2012 +0900
-+++ b/model/libc-ns3.h	Mon Dec 10 19:38:18 2012 +0900
-@@ -109,6 +109,7 @@
+diff -r e92279f7b625 model/libc-ns3.h
+--- a/model/libc-ns3.h	Mon Feb 11 17:03:15 2013 +0100
++++ b/model/libc-ns3.h	Tue Feb 12 19:00:19 2013 +0900
+@@ -111,6 +111,7 @@
  NATIVE (strcoll)
  NATIVE (memset)
  NATIVE (memcpy)
@@ -107,7 +102,7 @@ diff -r c0e9a9b531bf -r de5b5da27f1b model/libc-ns3.h
  NATIVE (bcopy)
  NATIVE (memcmp)
  NATIVE (memmove)
-@@ -246,6 +247,9 @@
+@@ -248,6 +249,9 @@
  DCE (daemon)
  DCE (alarm)
  DCE (readlink)
@@ -117,7 +112,7 @@ diff -r c0e9a9b531bf -r de5b5da27f1b model/libc-ns3.h
  
  // SYS/UIO.H
  DCE (readv)
-@@ -259,8 +263,8 @@
+@@ -261,8 +265,8 @@
  DCE (setlinebuf)
  DCE (fseek)
  DCE (ftell)
@@ -128,7 +123,7 @@ diff -r c0e9a9b531bf -r de5b5da27f1b model/libc-ns3.h
  DCE (rewind)
  DCE (fgetpos)
  DCE (fsetpos)
-@@ -301,6 +305,8 @@
+@@ -303,6 +307,8 @@
  DCE (remove)
  //NATIVE (sscanf)
  NATIVE_WITH_ALIAS2 (sscanf, __isoc99_sscanf)
@@ -137,7 +132,7 @@ diff -r c0e9a9b531bf -r de5b5da27f1b model/libc-ns3.h
  
  // STDARG.H
  DCE (vprintf)
-@@ -407,6 +413,11 @@
+@@ -409,6 +415,11 @@
  NATIVE (pthread_setcancelstate)
  NATIVE (pthread_sigmask)
  NATIVE (pthread_equal)
@@ -149,7 +144,7 @@ diff -r c0e9a9b531bf -r de5b5da27f1b model/libc-ns3.h
  
  // SEMAPHORE.H
  DCE (sem_init)
-@@ -502,6 +513,8 @@
+@@ -504,6 +515,8 @@
  NATIVE (bindtextdomain)
  NATIVE (textdomain)
  NATIVE (gettext)
@@ -158,7 +153,7 @@ diff -r c0e9a9b531bf -r de5b5da27f1b model/libc-ns3.h
  
  // PWD.H
  NATIVE (getpwnam)
-@@ -563,6 +576,7 @@
+@@ -565,6 +578,7 @@
  DCE    (__fprintf_chk)
  DCE    (__snprintf_chk)
  DCE    (__errno_location)
