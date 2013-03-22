@@ -8,10 +8,19 @@
 #include "ns3/dce-dnssec-module.h"
 #include "ns3/tcp-header.h"
 #include "ns3/udp-header.h"
+#include "ns3/constant-position-mobility-model.h"
 #include <fstream>
 
 using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("DceDnssec");
+
+void setPos (Ptr<Node> n, int x, int y, int z)
+{
+  Ptr<ConstantPositionMobilityModel> loc = CreateObject<ConstantPositionMobilityModel> ();
+  n->AggregateObject (loc);
+  Vector locVec2 (x, y, z);
+  loc->SetPosition (locVec2);
+}
 
 static void RunIp (Ptr<Node> node, Time at, std::string str)
 {
@@ -106,6 +115,15 @@ int main (int argc, char *argv[])
   cacheSv.Create (1);
   client.Create (nNodes);
   nodes = NodeContainer (fakeRoot, trustAuth, subAuth, cacheSv, client);
+  setPos (fakeRoot.Get (0), 0, 100, 0);
+  setPos (trustAuth.Get (0), 0, 110, 0);
+  setPos (subAuth.Get (0), -50, 120, 0);
+  setPos (subAuth.Get (1), 50, 130, 0);
+  setPos (cacheSv.Get (0), 0, 140, 0);
+  for (uint32_t i = 0; i < nNodes; i++)
+    {
+      setPos (client.Get (i), -(50 * (nNodes-1)/2) + i*50, 200, 0);
+    }
 
   NetDeviceContainer devices;
 
