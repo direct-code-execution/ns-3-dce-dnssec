@@ -42,7 +42,7 @@ def configure(conf):
     ns3waf.check_modules(conf, ['core', 'network', 'internet'], mandatory = True)
     ns3waf.check_modules(conf, ['point-to-point', 'tap-bridge', 'csma'], mandatory = False)
     ns3waf.check_modules(conf, ['dce', 'netlink'], mandatory = True)
-    ns3waf.check_modules(conf, ['visualizer'], mandatory = False)
+    ns3waf.check_modules(conf, ['visualizer', 'mobility'], mandatory = False)
     conf.check_tool('compiler_cc')
     conf.env.append_value('LINKFLAGS', '-Wl,--dynamic-linker=' +
                           os.path.abspath (conf.env.PREFIX + '/lib/ldso'))
@@ -59,7 +59,7 @@ def build_dce_examples(module, bld):
                        target='bin/dce-dns-simple',
                        source=['examples/dce-dns-simple.cc'])
 
-    module.add_example(needed = ['core', 'network', 'dce', 'netlink', 'csma', 'point-to-point', 'dce-dnssec'], 
+    module.add_example(needed = ['core', 'network', 'dce', 'netlink', 'point-to-point', 'dce-dnssec', 'mobility', 'csma', 'visualizer'], 
                        target='bin/dce-dnssec',
                        source=['examples/dce-dnssec.cc'])
 

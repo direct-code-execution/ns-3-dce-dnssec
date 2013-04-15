@@ -231,7 +231,7 @@ int main (int argc, char *argv[])
   Config::Connect ("/NodeList/*/DeviceList/0/$ns3::CsmaNetDevice/MacRx",
 		   MakeCallback (&CsmaRxCallback));
 
-  Simulator::Stop (Seconds (2000.0));
+  Simulator::Stop (Seconds (200.0));
   Simulator::Run ();
   Simulator::Destroy ();
 
