@@ -976,7 +976,7 @@
 
     <module name="dce-dnssec">
       <source type="mercurial">
-        <attribute name="url" value="http://zakzak.koganei.itrc.net/~tazaki/outgoing/ns-3-dce-dnssec/"/>
+        <attribute name="url" value="http://ns3-dev.sekiya-lab.info/hg/ns-3-dce-dnssec/"/>
         <attribute name="module_directory" value="ns-3-dce/myscripts/ns-3-dce-dnssec"/>
       </source>
       <depends_on name="bind9" optional="False"/>
