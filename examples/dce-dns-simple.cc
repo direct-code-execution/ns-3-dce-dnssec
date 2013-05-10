@@ -65,7 +65,7 @@ int main (int argc, char *argv[])
   processManager.SetTaskManagerAttribute ("FiberManagerType",
                                           EnumValue (0));
   processManager.SetNetworkStack("ns3::LinuxSocketFdFactory",
-				 "Library", StringValue ("libnet-next-2.6.so"));
+				 "Library", StringValue ("liblinux.so"));
 
   // Assign address
   for (int n=0; n < nodes.GetN (); n++)
