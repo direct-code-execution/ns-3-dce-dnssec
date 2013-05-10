@@ -19,8 +19,6 @@ def configure(conf):
     ns3waf.check_modules(conf, ['dce', 'netlink'], mandatory = True)
     ns3waf.check_modules(conf, ['visualizer', 'mobility'], mandatory = False)
     conf.check_tool('compiler_cc')
-    conf.env.append_value('LINKFLAGS', '-Wl,--dynamic-linker=' +
-                          os.path.abspath (Options.options.with_elf_loader + '/ldso'))
 
     conf.env['ENABLE_PYTHON_BINDINGS'] = True
     conf.env['NS3_ENABLED_MODULES'] = []
@@ -38,6 +36,7 @@ def build_dce_examples(module, bld):
 
     module.add_example(needed = ['core', 'network', 'dce', 'netlink', 'point-to-point', 'dce-dnssec', 'mobility', 'csma', 'visualizer'], 
                        target='bin/dce-dnssec',
+                       linkflags=['-Wl,--dynamic-linker=' + os.path.abspath (bld.env['ELF_LOADER_PATH'] + '/ldso')],
                        source=['examples/dce-dnssec.cc'])
 
 def build(bld):    
