@@ -90,6 +90,7 @@ public:
   void SetNsAddr (Ptr<Node> node, std::string nsaddr);
   void CreateZones (NodeContainer c);
   void SetCacheServer (Ptr<Node> node);
+  void DisableDnssec (Ptr<Node> node);
 
 private:
   /**

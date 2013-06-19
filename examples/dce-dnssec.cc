@@ -95,6 +95,7 @@ bool enablePcap = false;
 std::string linkDelay = "1ms";
 double lossRatio = 0.00;
 uint32_t m_qps = 1;
+bool m_disableDnssec = true;
 
 int main (int argc, char *argv[])
 {
@@ -105,6 +106,7 @@ int main (int argc, char *argv[])
   cmd.AddValue ("linkDelay", "configure each link delay (default 1ms)", linkDelay);
   cmd.AddValue ("lossRatio", "configure each link packet loss ratio (default 0%)", lossRatio);
   cmd.AddValue ("qps", "query per second (default 1qps)", m_qps);
+  cmd.AddValue ("disableDnssec", "disable DNSSEC (default enable)", m_disableDnssec);
   cmd.Parse (argc, argv);
 
   NodeContainer trustAuth, subAuth, fakeRoot, cacheSv, client;
@@ -178,6 +180,10 @@ int main (int argc, char *argv[])
   bind9.UseManualConfig (fakeRoot);
   bind9.SetNsAddr (fakeRoot.Get (0), "10.0.0.1");
   bind9.AddZone (fakeRoot.Get (0), ".");
+  if (m_disableDnssec)
+    {
+      bind9.DisableDnssec (fakeRoot.Get (0));
+    }
 
   // 
   // Tursted Anthor Authority Server Configuration (node 1)
@@ -185,6 +191,10 @@ int main (int argc, char *argv[])
   bind9.UseManualConfig (trustAuth);
   bind9.SetNsAddr (trustAuth.Get (0), "10.0.0.2");
   bind9.AddZone (trustAuth.Get (0), "org");
+  if (m_disableDnssec)
+    {
+      bind9.DisableDnssec (trustAuth.Get (0));
+    }
 
   // 
   // Authority Server of Sub-Domain Configuration (node 2)
@@ -192,6 +202,10 @@ int main (int argc, char *argv[])
   bind9.UseManualConfig (subAuth.Get (0));
   bind9.SetNsAddr (subAuth.Get (0), "10.0.0.3");
   bind9.AddZone (subAuth.Get (0), "example.org");
+  if (m_disableDnssec)
+    {
+      bind9.DisableDnssec (subAuth.Get (0));
+    }
 
   // 
   // Authority Server of Sub-Domain Configuration (node 3)
@@ -199,6 +213,10 @@ int main (int argc, char *argv[])
   bind9.UseManualConfig (subAuth.Get (1));
   bind9.SetNsAddr (subAuth.Get (1), "10.0.0.4");
   bind9.AddZone (subAuth.Get (1), "second.example.org");
+  if (m_disableDnssec)
+    {
+      bind9.DisableDnssec (subAuth.Get (1));
+    }
 
   // 
   // Cache Server Configuration (node 4)

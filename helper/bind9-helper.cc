@@ -38,7 +38,8 @@ public:
     : m_debug (false),
       m_usemanualconf (false),
       m_binary ("named"),
-      m_iscache (false)
+      m_iscache (false),
+      m_isdnssec (true)
   {
     m_zones = new std::vector<std::string> ();
   }
@@ -67,6 +68,7 @@ public:
   std::vector<std::string> *m_zones;
   std::string m_nsaddr;
   bool m_iscache;
+  bool m_isdnssec;
 
   virtual void
   Print (std::ostream& os) const
@@ -136,6 +138,20 @@ Bind9Helper::SetCacheServer (Ptr<Node> node)
     }
 
   bind9_conf->m_iscache = true;
+  return;
+}
+
+void
+Bind9Helper::DisableDnssec (Ptr<Node> node)
+{
+  Ptr<Bind9Config> bind9_conf = node->GetObject<Bind9Config> ();
+  if (!bind9_conf)
+    {
+      bind9_conf = CreateObject<Bind9Config> ();
+      node->AggregateObject (bind9_conf);
+    }
+
+  bind9_conf->m_isdnssec = false;
   return;
 }
 
@@ -319,9 +335,15 @@ Bind9Helper::CreateZones (NodeContainer c)
         {
           conf << bind9_conf->m_nsaddr << " " << bind9_conf->m_nsaddr << " "
                << *(bind9_conf->m_zones->begin ())
-               << " files-" << node->GetId () << std::endl;
-        }
+               << " files-" << node->GetId (); 
 
+          // dnssec or not
+          if (bind9_conf->m_isdnssec)
+            conf << " yes";
+          else
+            conf << " no";
+          conf << std::endl;
+        }
     }
   conf.close ();
 
