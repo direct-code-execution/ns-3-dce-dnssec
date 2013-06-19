@@ -87,7 +87,8 @@ public:
   void UseManualConfig (NodeContainer nodes);
   void SetBinary (NodeContainer nodes, std::string binary);
   void SetForwarder (NodeContainer nodes, Ipv4Address fwd);
-  void SendQuery (Ptr<Node> node, Time at, std::string query);
+  void SendQuery (Ptr<Node> node, Time at, std::string qname, 
+                  std::string class_name, std::string type_name);
 
 private:
   /**

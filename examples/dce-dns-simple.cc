@@ -91,7 +91,7 @@ int main (int argc, char *argv[])
   for (int i = 0; i < 20; i++)
     {
       unbound.SendQuery (nodes.Get (1), Seconds (1+ 10*i), 
-			 "ns1.ns3-dns.wide.ad.jp");
+			 "ns1.ns3-dns.wide.ad.jp", "IN", "A");
     }
 
   Simulator::Stop (Seconds (400.0));

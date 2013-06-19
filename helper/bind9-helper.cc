@@ -19,6 +19,7 @@
  */
 
 #include "ns3/object-factory.h"
+#include "ns3/log.h"
 #include "bind9-helper.h"
 #include "ns3/dce-application-helper.h"
 #include "ns3/names.h"
@@ -28,6 +29,7 @@
 #include <ruby.h>
 
 namespace ns3 {
+NS_LOG_COMPONENT_DEFINE ("Bind9Helper");
 
 class Bind9Config : public Object
 {
@@ -39,7 +41,8 @@ public:
       m_usemanualconf (false),
       m_binary ("named"),
       m_iscache (false),
-      m_isdnssec (true)
+      m_isdnssec (true),
+      m_querylog (false)
   {
     m_zones = new std::vector<std::string> ();
   }
@@ -69,6 +72,7 @@ public:
   std::string m_nsaddr;
   bool m_iscache;
   bool m_isdnssec;
+  bool m_querylog;
 
   virtual void
   Print (std::ostream& os) const
@@ -79,6 +83,17 @@ public:
     //    << "# EOF" << std::endl;
   }
 };
+
+Query::Query (Time tx_timestamp, std::string qname, std::string class_name, std::string type_name, std::string recur_flag)
+{
+  m_tx_timestamp = tx_timestamp;
+  m_qname = qname;
+  m_class_name = class_name;
+  m_type_name = type_name;
+  m_recur_flag = recur_flag;
+}
+
+
 std::ostream& operator << (std::ostream& os, Bind9Config const& config)
 {
   config.Print (os);
@@ -245,6 +260,21 @@ Bind9Helper::GenerateConfig (Ptr<Node> node)
     }
   conf << "};"  << std::endl;
 
+  // FIXME: add EnableQueryLog()
+  if (bind9_conf->m_querylog)
+    {
+      conf << "logging {"  << std::endl;
+      conf << "        channel queries-log {"  << std::endl;
+      conf << "                file \"/var/log/queries.log\" versions 3 size 10m;"  << std::endl;
+      conf << "                severity info;"  << std::endl;
+      conf << "                print-time yes;"  << std::endl;
+      conf << "                print-severity yes;"  << std::endl;
+      conf << "                print-category yes;"  << std::endl;
+      conf << "        };"  << std::endl;
+      conf << "        category queries { queries-log; };"  << std::endl;
+      conf << "};"  << std::endl;
+    }
+
   if (bind9_conf->m_iscache)
     {
       conf << "zone \".\" {"  << std::endl;
@@ -358,6 +388,88 @@ Bind9Helper::CreateZones (NodeContainer c)
   }
 
 }
+
+#if 1
+
+std::list <Query>
+Bind9Helper::ImportQueryLog (std::string logfile)
+{
+  std::ifstream topgen;
+  topgen.open (logfile.c_str ());
+  std::list<Query> query_list;
+
+  if (!topgen.is_open ())
+    {
+      NS_LOG_WARN ("Bind9 querylog file object is not open, check file name and permissions");
+      return query_list;
+    }
+
+  /*
+   * Data format (bind9 querylog)
+   *
+   * 19-Jun-2013 14:46:38.370 queries: client 133.11.103.26#57936: query: eowp.alc.co.jp IN A + (133.11.124.164)
+   * {Date} {"queries:"} {"client"} {srcip#port":"} {"query:"} {name} {classname} {typename} {recursive flag} {resolver?}
+   *
+   */
+  std::string dummy;
+  std::string date;
+  std::string timestamp;
+  std::string qname;
+  std::string class_name;
+  std::string type_name;
+  std::string recur_flag;
+  int queryNum = 0;
+  Time startTime = Seconds (0);
+
+  std::istringstream lineBuffer;
+  std::string line;
+
+  for (int i = 0; !topgen.eof (); i++)
+    {
+      getline (topgen, line);
+      queryNum++;
+      lineBuffer.clear ();
+      lineBuffer.str (line);
+
+      // {Date} {Time} {"queries:"} {"client"} {srcip#port":"} {"query:"} {name} {classname} {typename} {recursive flag} {resolver?}
+      lineBuffer >> date;
+      lineBuffer >> timestamp;
+      lineBuffer >> dummy;
+      lineBuffer >> dummy;
+      lineBuffer >> dummy;
+      lineBuffer >> dummy;
+      lineBuffer >> qname;
+      lineBuffer >> class_name;
+      lineBuffer >> type_name;
+      lineBuffer >> recur_flag;
+      lineBuffer >> dummy;
+
+      if ((!qname.empty ()) && (!type_name.empty ()))
+        {
+          NS_LOG_INFO ("Query " << qname << " class: " << class_name << " type: " <<
+                       type_name << " flag: " << recur_flag);
+
+          struct tm tm;
+          char *ret = strptime (timestamp.c_str (), "%X", &tm);
+          if (startTime == Seconds (0))
+            {
+              startTime = Seconds (tm.tm_sec);
+              startTime += MilliSeconds (atoi (ret + 1));
+            }
+
+          Query query (Seconds (10 + tm.tm_sec) + MilliSeconds (atoi (ret + 1)) - startTime,
+                       qname, class_name, type_name, recur_flag);
+          NS_LOG_INFO ("tx timestamp " << query.m_tx_timestamp);
+          query_list.push_back (query);
+        }
+    }
+
+  NS_LOG_INFO ("Bind9 query log created with " << queryNum << " queries ");
+  topgen.close ();
+
+  return query_list;
+}
+#endif
 
 ApplicationContainer
 Bind9Helper::Install (Ptr<Node> node)

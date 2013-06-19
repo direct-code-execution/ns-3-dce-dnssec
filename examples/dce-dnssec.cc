@@ -233,6 +233,7 @@ int main (int argc, char *argv[])
   // 		     "mail.example.org");
 
   uint32_t numQuery = m_qps * 50;
+#if 0
   for (int i = 0; i < nNodes; i++)
     {
       // node3 is forwarder
@@ -243,8 +244,24 @@ int main (int argc, char *argv[])
 	   		     "mail.example.org.");
 	}
       unbound.Install (client.Get (i));
-
     }
+#else
+  unbound.SetForwarder (client.Get (0), "10.0.0.5");
+  std::list<Query> query_list = bind9.ImportQueryLog ("qlog.dat");
+  //std::list<Query> query_list = bind9.ImportQueryLog ("queries.log");
+  std::list<Query>::iterator it = query_list.begin (); 
+  int j = 0;
+  while (it != query_list.end())
+    {
+      Query query = (*it);
+      ++it;
+      j++;
+      unbound.SendQuery (client.Get (0), query.m_tx_timestamp,
+			 query.m_qname, query.m_class_name, 
+			 query.m_type_name);
+    }
+  unbound.Install (client.Get (0));
+#endif
 
   Config::Connect ("/NodeList/*/DeviceList/0/$ns3::CsmaNetDevice/MacRx",
 		   MakeCallback (&CsmaRxCallback));

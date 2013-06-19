@@ -29,6 +29,19 @@
 
 namespace ns3 {
 
+class Query
+{
+public:
+  Query (Time tx_timestamp, std::string qname, std::string class_name, std::string type_name, std::string recur_flag);
+  Time m_tx_timestamp;
+  std::string m_qname;
+  std::string m_class_name;
+  std::string m_type_name;
+  std::string m_recur_flag;
+private:
+};
+
+
 /**
  * \brief create a umip (bind9) daemon as an application and associate it to a node
  *
@@ -91,6 +104,7 @@ public:
   void CreateZones (NodeContainer c);
   void SetCacheServer (Ptr<Node> node);
   void DisableDnssec (Ptr<Node> node);
+  std::list <Query> ImportQueryLog (std::string logfile);
 
 private:
   /**

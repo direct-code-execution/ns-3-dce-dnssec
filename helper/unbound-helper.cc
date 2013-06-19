@@ -186,7 +186,8 @@ UnboundHelper::GenerateConfig (Ptr<Node> node)
 }
 
 void
-UnboundHelper::SendQuery (Ptr<Node> node, Time at, std::string query)
+UnboundHelper::SendQuery (Ptr<Node> node, Time at, std::string qname, 
+                          std::string class_name, std::string type_name)
 {
   DceApplicationHelper process;
   ApplicationContainer apps;
@@ -199,11 +200,13 @@ UnboundHelper::SendQuery (Ptr<Node> node, Time at, std::string query)
 
   process.SetBinary ("unbound-host");
   process.ResetArguments ();
-  process.ParseArguments (query);
+  process.ParseArguments (qname);
   process.ParseArguments ("-r");
   //      process.ParseArguments ("-C /etc/unbound.conf");
+  process.ParseArguments ("-c");
+  process.ParseArguments (class_name);
   process.ParseArguments ("-t");
-  process.ParseArguments ("A");
+  process.ParseArguments (type_name);
   //      process.ParseArguments ("-f");
   //      process.ParseArguments ("/etc/root.key");
   if (unbound_conf->m_debug)
