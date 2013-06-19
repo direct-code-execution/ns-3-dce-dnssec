@@ -247,8 +247,8 @@ int main (int argc, char *argv[])
     }
 #else
   unbound.SetForwarder (client.Get (0), "10.0.0.5");
-  std::list<Query> query_list = bind9.ImportQueryLog ("qlog.dat");
-  //std::list<Query> query_list = bind9.ImportQueryLog ("queries.log");
+  //std::list<Query> query_list = bind9.ImportQueryLog ("myscripts/ns-3-dce-dnssec/examples/qlog.dat");
+  std::list<Query> query_list = bind9.ImportQueryLog ("myscripts/ns-3-dce-dnssec/examples/queries.log");
   std::list<Query>::iterator it = query_list.begin (); 
   int j = 0;
   while (it != query_list.end())
