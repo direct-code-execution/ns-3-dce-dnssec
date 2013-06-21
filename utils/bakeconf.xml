@@ -831,7 +831,7 @@
   <!-- ns-3.17 main module definition; for now, pulling ns-3-dev -->
     <module name="ns-3.17">
       <source type="mercurial">
-	<attribute name="url" value="http://code.nsnam.org/ns-3-dev"/>
+	<attribute name="url" value="http://code.nsnam.org/ns-3.17"/>
       </source>
       <depends_on name="netanim-3.103" optional="True"/>
       <depends_on name="pybindgen-0.16.0.825" optional="True"/>
@@ -930,6 +930,39 @@
     </module>
 
     <!-- dnssec part -->
+    <module name="libldns-dev">
+      <source type="system_dependency">
+        <attribute name="dependency_test" value="libldns.so"/>
+        <attribute name="try_to_install" value="False"/>
+        <attribute name="name_apt-get" value="libldns-dev"/>
+        <attribute name="more_information" value="Didn't find libldns-dev package; please install it."/>
+      </source>
+      <build type="none" objdir="no">
+      </build>
+    </module>
+
+    <module name="libruby1.8">
+      <source type="system_dependency">
+        <attribute name="try_to_install" value="False"/>
+        <attribute name="dependency_test" value="libruby1.8.so"/>
+        <attribute name="name_apt-get" value="libruby1.8"/>
+        <attribute name="more_information" value="Didn't find libruby1.8 package; please install it."/>
+      </source>
+      <build type="none" objdir="no">
+      </build>
+    </module>
+
+    <module name="ruby1.8-dev">
+      <source type="system_dependency">
+        <attribute name="try_to_install" value="False"/>
+        <attribute name="dependency_test" value="ruby.h"/>
+        <attribute name="name_apt-get" value="ruby1.8-dev"/>
+        <attribute name="more_information" value="Didn't find ruby1.8-dev package; please install it."/>
+      </source>
+      <build type="none" objdir="no">
+      </build>
+    </module>
+
     <module name="openssl" built_once="true">
       <source type="archive">
         <attribute name="url" value="http://www.openssl.org/source/openssl-0.9.8x.tar.gz"/>
@@ -941,7 +974,7 @@
 
     <module name="bind9" built_once="true">
       <source type="archive">
-        <attribute name="url" value="ftp://ftp.isc.org/isc/bind9/9.8.1/bind-9.8.1.tar.gz"/>
+        <attribute name="url" value="http://ftp.isc.org/isc/bind9/9.8.1/bind-9.8.1.tar.gz"/>
       </source>
       <depends_on name="openssl" optional="False"/>
       <build type="autotools" objdir="no">
@@ -983,6 +1016,8 @@
       <depends_on name="unbound" optional="False"/>
       <depends_on name="createzones" optional="False"/>
       <depends_on name="dce-linux-1.0" optional="False"/>
+      <depends_on name="libldns-dev" optional="False"/>
+      <depends_on name="libruby1.8" optional="False"/>
       <build type="none">
 	<attribute name="supported_os" value="linux;linux2"/>
       </build>
