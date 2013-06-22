@@ -963,6 +963,17 @@
       </build>
     </module>
 
+    <module name="bind9utils">
+      <source type="system_dependency">
+        <attribute name="try_to_install" value="False"/>
+        <attribute name="dependency_test" value="dnssec-keygen"/>
+        <attribute name="name_apt-get" value="bind9utils"/>
+        <attribute name="more_information" value="Didn't find bind9utils package; please install it."/>
+      </source>
+      <build type="none" objdir="no">
+      </build>
+    </module>
+
     <module name="openssl" built_once="true">
       <source type="archive">
         <attribute name="url" value="http://www.openssl.org/source/openssl-0.9.8x.tar.gz"/>
@@ -1018,6 +1029,7 @@
       <depends_on name="dce-linux-1.0" optional="False"/>
       <depends_on name="libldns-dev" optional="False"/>
       <depends_on name="libruby1.8" optional="False"/>
+      <depends_on name="bind9utils" optional="False"/>
       <build type="none">
 	<attribute name="supported_os" value="linux;linux2"/>
       </build>
