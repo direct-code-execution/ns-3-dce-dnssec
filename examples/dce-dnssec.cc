@@ -90,6 +90,7 @@ CsmaRxCallback (std::string context, Ptr<const Packet> originalPacket)
     }
 
 }
+
 bool m_delay = true;
 uint32_t nNodes = 1;
 bool enablePcap = false;
@@ -167,6 +168,7 @@ int main (int argc, char *argv[])
     {
       AddAddress (nodes.Get (n), Seconds (0.1), "sim0", "10.0.0.", 1 + n, "/8");
       AddAddress (nodes.Get (n), Seconds (0.1), "sim0", "192.168.255.", 51 + n, "/24");
+      RunIp (nodes.Get (n), Seconds (0.2), "link set lo up");
       RunIp (nodes.Get (n), Seconds (0.2), "link set sim0 up");
       // RunIp (nodes.Get (n), Seconds (0.2), "link show");
       // RunIp (nodes.Get (n), Seconds (0.3), "route show table all");
@@ -271,6 +273,8 @@ int main (int argc, char *argv[])
 
   Config::Connect ("/NodeList/*/DeviceList/0/$ns3::CsmaNetDevice/MacRx",
 		   MakeCallback (&CsmaRxCallback));
+
+  bind9.CallRndcStats (cacheSv.Get (0), Seconds (100.0));
 
   Simulator::Stop (Seconds (200.0));
   Simulator::Run ();

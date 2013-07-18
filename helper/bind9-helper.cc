@@ -277,6 +277,11 @@ Bind9Helper::GenerateConfig (Ptr<Node> node)
 
   if (bind9_conf->m_iscache)
     {
+      conf << "controls {"  << std::endl;
+      conf << "  inet 127.0.0.1 allow { localhost; };"  << std::endl;
+      //      conf << "  inet 127.0.0.1 allow { localhost; } keys { <key-name>; };"  << std::endl;
+      conf << "};"  << std::endl;
+
       conf << "zone \".\" {"  << std::endl;
       conf << "        type hint;"  << std::endl;
       conf << "        file \"named.root\";"  << std::endl;
@@ -389,8 +394,6 @@ Bind9Helper::CreateZones (NodeContainer c)
 
 }
 
-#if 1
-
 std::list <Query>
 Bind9Helper::ImportQueryLog (std::string logfile)
 {
@@ -469,7 +472,20 @@ Bind9Helper::ImportQueryLog (std::string logfile)
 
   return query_list;
 }
-#endif
+
+void
+Bind9Helper::CallRndcStats (Ptr<Node> node, Time at)
+{
+  DceApplicationHelper process;
+  ApplicationContainer apps;
+  process.SetBinary ("rndc");
+  process.SetStackSize (1<<16);
+  process.ResetArguments ();
+  process.ParseArguments ("-V");
+  process.ParseArguments ("stats");
+  apps = process.Install (node);
+  apps.Start (at);
+}
 
 ApplicationContainer
 Bind9Helper::Install (Ptr<Node> node)
