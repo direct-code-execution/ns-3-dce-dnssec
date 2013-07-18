@@ -207,6 +207,7 @@ UnboundHelper::SendQuery (Ptr<Node> node, Time at, std::string qname,
   process.ParseArguments (class_name);
   process.ParseArguments ("-t");
   process.ParseArguments (type_name);
+  process.ParseArguments ("-v");
   //      process.ParseArguments ("-f");
   //      process.ParseArguments ("/etc/root.key");
   if (unbound_conf->m_debug)
