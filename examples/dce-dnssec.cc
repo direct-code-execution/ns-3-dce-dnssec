@@ -83,6 +83,7 @@ CsmaRxCallback (std::string context, Ptr<const Packet> originalPacket)
 	  if (tcpHdr.GetDestinationPort () == 53 ||
 	      tcpHdr.GetSourcePort () == 53)
 	    {
+	      NS_LOG_INFO ("received dns packet (tcp) " << originalPacket->GetSize () << " bytes");
 	      tot53pkts += originalPacket->GetSize ();
 	    }
 	}
@@ -95,7 +96,7 @@ bool enablePcap = false;
 std::string linkDelay = "1ms";
 double lossRatio = 0.00;
 uint32_t m_qps = 1;
-bool m_disableDnssec = true;
+bool m_disableDnssec = false;
 bool useQlog = false;
 
 int main (int argc, char *argv[])
