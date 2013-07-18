@@ -96,6 +96,7 @@ std::string linkDelay = "1ms";
 double lossRatio = 0.00;
 uint32_t m_qps = 1;
 bool m_disableDnssec = true;
+bool useQlog = false;
 
 int main (int argc, char *argv[])
 {
@@ -106,6 +107,7 @@ int main (int argc, char *argv[])
   cmd.AddValue ("linkDelay", "configure each link delay (default 1ms)", linkDelay);
   cmd.AddValue ("lossRatio", "configure each link packet loss ratio (default 0%)", lossRatio);
   cmd.AddValue ("qps", "query per second (default 1qps)", m_qps);
+  cmd.AddValue ("useQlog", "use bind9 query log as input of client queries (default none)", useQlog);
   cmd.AddValue ("disableDnssec", "disable DNSSEC (default enable)", m_disableDnssec);
   cmd.Parse (argc, argv);
 
@@ -128,7 +130,7 @@ int main (int argc, char *argv[])
     }
 
   NetDeviceContainer devices;
-
+  PointToPointHelper p2p;
   CsmaHelper csma;
   csma.SetChannelAttribute ("DataRate", StringValue ("500Mbps"));
   csma.SetChannelAttribute ("Delay", StringValue (linkDelay));
@@ -233,35 +235,38 @@ int main (int argc, char *argv[])
   // 		     "mail.example.org");
 
   uint32_t numQuery = m_qps * 50;
-#if 0
-  for (int i = 0; i < nNodes; i++)
+  if (useQlog)
     {
-      // node3 is forwarder
-      unbound.SetForwarder (client.Get (i), "10.0.0.5");
-      for (int j = 0; j < numQuery; j++)
+      unbound.SetForwarder (client.Get (0), "10.0.0.5");
+      //std::list<Query> query_list = bind9.ImportQueryLog ("myscripts/ns-3-dce-dnssec/examples/qlog.dat");
+      std::list<Query> query_list = bind9.ImportQueryLog ("myscripts/ns-3-dce-dnssec/examples/queries.log");
+      std::list<Query>::iterator it = query_list.begin (); 
+      int j = 0;
+      while (it != query_list.end())
 	{
-	  unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
-	   		     "mail.example.org.");
+	  Query query = (*it);
+	  ++it;
+	  j++;
+	  unbound.SendQuery (client.Get (0), query.m_tx_timestamp,
+			     query.m_qname, query.m_class_name, 
+			     query.m_type_name);
 	}
-      unbound.Install (client.Get (i));
+      unbound.Install (client.Get (0));
     }
-#else
-  unbound.SetForwarder (client.Get (0), "10.0.0.5");
-  //std::list<Query> query_list = bind9.ImportQueryLog ("myscripts/ns-3-dce-dnssec/examples/qlog.dat");
-  std::list<Query> query_list = bind9.ImportQueryLog ("myscripts/ns-3-dce-dnssec/examples/queries.log");
-  std::list<Query>::iterator it = query_list.begin (); 
-  int j = 0;
-  while (it != query_list.end())
+  else
     {
-      Query query = (*it);
-      ++it;
-      j++;
-      unbound.SendQuery (client.Get (0), query.m_tx_timestamp,
-			 query.m_qname, query.m_class_name, 
-			 query.m_type_name);
+      for (int i = 0; i < nNodes; i++)
+	{
+	  // node3 is forwarder
+	  unbound.SetForwarder (client.Get (i), "10.0.0.5");
+	  for (int j = 0; j < numQuery; j++)
+	    {
+	      unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
+				 "mail.example.org.", "IN", "A");
+	    }
+	  unbound.Install (client.Get (i));
+	}
     }
-  unbound.Install (client.Get (0));
-#endif
 
   Config::Connect ("/NodeList/*/DeviceList/0/$ns3::CsmaNetDevice/MacRx",
 		   MakeCallback (&CsmaRxCallback));
