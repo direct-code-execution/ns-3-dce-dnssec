@@ -988,8 +988,9 @@
         <attribute name="url" value="http://ftp.isc.org/isc/bind9/9.8.1/bind-9.8.1.tar.gz"/>
       </source>
       <depends_on name="openssl" optional="False"/>
-      <build type="autotools" objdir="no">
-        <attribute name="configure_arguments" value="./configure CFLAGS=-fPIC LDFLAGS=-pie --disable-linux-caps --enable-epoll=none --with-openssl=$INSTALLDIR"/>
+      <!-- build type="autotools" objdir="no" -->
+      <build type="make" objdir="yes">
+        <attribute name="pre_installation" value="cd $SRCDIR; autoreconf -i; CFLAGS='-fPIC -g' LDFLAGS=-pie ./configure --disable-linux-caps --enable-epoll=none --with-openssl=$INSTALLDIR"/>
         <attribute name="install_arguments" value="-n" />
         <attribute name="post_installation" value="cd $SRCDIR; mkdir -p $INSTALLDIR/bin_dce; /bin/cp bin/named/named bin/dig/dig bin/rndc/rndc $INSTALLDIR/bin_dce"/>
       </build>
