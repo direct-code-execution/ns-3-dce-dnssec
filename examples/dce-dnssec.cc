@@ -99,6 +99,7 @@ double lossRatio = 0.00;
 uint32_t m_qps = 1;
 bool m_disableDnssec = false;
 bool useQlog = false;
+double stopTime = 100.0;
 
 int main (int argc, char *argv[])
 {
@@ -112,6 +113,9 @@ int main (int argc, char *argv[])
   cmd.AddValue ("useQlog", "use bind9 query log as input of client queries (default none)", useQlog);
   cmd.AddValue ("disableDnssec", "disable DNSSEC (default enable)", m_disableDnssec);
   cmd.Parse (argc, argv);
+
+  // GlobalValue::Bind ("SimulatorImplementationType", 
+  //                    StringValue ("ns3::RealtimeSimulatorImpl"));
 
   NodeContainer trustAuth, subAuth, fakeRoot, cacheSv, client;
   NodeContainer nodes;
@@ -237,7 +241,7 @@ int main (int argc, char *argv[])
   // unbound.SendQuery (cacheSv.Get (0), Seconds (10), 
   // 		     "mail.example.org");
 
-  uint32_t numQuery = m_qps * 50;
+  uint32_t numQuery = m_qps * (stopTime - 10);
   if (useQlog)
     {
       unbound.SetForwarder (client.Get (0), "10.0.0.5");
@@ -266,6 +270,8 @@ int main (int argc, char *argv[])
 	    {
 	      unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
 				 "mail.example.org.", "IN", "A");
+	      unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
+				 "mail23mail23mail23mail23mail23mail23mail234.example.org.", "IN", "A");
 	    }
 	  unbound.Install (client.Get (i));
 	}
@@ -276,7 +282,7 @@ int main (int argc, char *argv[])
 
   bind9.CallRndcStats (cacheSv.Get (0), Seconds (100.0));
 
-  Simulator::Stop (Seconds (200.0));
+  Simulator::Stop (Seconds (stopTime));
   Simulator::Run ();
   Simulator::Destroy ();
 
