@@ -474,6 +474,28 @@ Bind9Helper::ImportQueryLog (std::string logfile)
 }
 
 void
+Bind9Helper::SendQuery (Ptr<Node> node, Time at, std::string qname, 
+                        std::string class_name, std::string type_name)
+{
+  DceApplicationHelper process;
+  ApplicationContainer apps;
+
+  NS_ASSERT_MSG (0, "Not working appropriately. Please use UnboundHelper::SendQuery for a while.");
+
+  process.SetBinary ("dig");
+  process.ResetArguments ();
+  process.ParseArguments (qname);
+  process.ParseArguments ("-c");
+  process.ParseArguments (class_name);
+  process.ParseArguments ("-t");
+  process.ParseArguments (type_name);
+  process.SetStackSize (1<<16);
+  apps = process.Install (node);
+  apps.Start (at);
+  return;
+}
+
+void
 Bind9Helper::CallRndcStats (Ptr<Node> node, Time at)
 {
   DceApplicationHelper process;
