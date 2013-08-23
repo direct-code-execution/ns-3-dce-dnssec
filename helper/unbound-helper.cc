@@ -189,6 +189,11 @@ UnboundHelper::GenerateConfig (Ptr<Node> node)
   conf_dir << "/etc/";
   ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
 
+  // XXX unbound kill by herself if pid in pidfile is the same one...
+  conf_file << conf_dir.str () << "/unbound.pid";
+  ::unlink (conf_file.str ().c_str ());
+
+  conf_file.str ("");
   conf_file << conf_dir.str () << "/unbound.conf";
   std::ofstream conf;
   conf.open (conf_file.str ().c_str ());
