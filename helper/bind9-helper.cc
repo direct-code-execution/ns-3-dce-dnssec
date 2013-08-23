@@ -392,10 +392,9 @@ Bind9Helper::CreateZones (NodeContainer c)
 
   // call createzone.rb
   int state;
-  char *rb_argv[2] = {"--nsconfig=nsconfig.txt",  "--outdir=./"};
-  ruby_set_argv (2, rb_argv);
+  const char *rb_argv[2] = {"--nsconfig=nsconfig.txt",  "--outdir=./"};
+  ruby_set_argv (2, (char **)rb_argv);
   rb_load_protect (rb_str_new2("createzones/createzones.rb"), 0, &state);
-  //  rb_load_protect (rb_str_new2("createzones/createzones.rb build/nsconfig.txt -o ./"), 0, &state);
   if (state)
     {
       VALUE rbError = rb_funcall(rb_gv_get("$!"), rb_intern("message"), 0);
@@ -490,15 +489,17 @@ Bind9Helper::SendQuery (Ptr<Node> node, Time at, std::string qname,
   DceApplicationHelper process;
   ApplicationContainer apps;
 
-  NS_ASSERT_MSG (0, "Not working appropriately. Please use UnboundHelper::SendQuery for a while.");
+  //  NS_ASSERT_MSG (0, "Not working appropriately. Please use UnboundHelper::SendQuery for a while.");
 
   process.SetBinary ("dig");
   process.ResetArguments ();
-  process.ParseArguments (qname);
   process.ParseArguments ("-c");
   process.ParseArguments (class_name);
   process.ParseArguments ("-t");
   process.ParseArguments (type_name);
+  process.ParseArguments ("-d");
+  process.ParseArguments ("+dnssec");
+  process.ParseArguments (qname);
   process.SetStackSize (1<<16);
   apps = process.Install (node);
   apps.Start (at);
