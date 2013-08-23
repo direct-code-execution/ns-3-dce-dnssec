@@ -392,6 +392,8 @@ Bind9Helper::CreateZones (NodeContainer c)
 
   // call createzone.rb
   int state;
+  char *rb_argv[2] = {"--nsconfig=nsconfig.txt",  "--outdir=./"};
+  ruby_set_argv (2, rb_argv);
   rb_load_protect (rb_str_new2("createzones/createzones.rb"), 0, &state);
   //  rb_load_protect (rb_str_new2("createzones/createzones.rb build/nsconfig.txt -o ./"), 0, &state);
   if (state)

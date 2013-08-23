@@ -245,6 +245,9 @@ int main (int argc, char *argv[])
   unbound.EnableDebug (cacheSv);
   unbound.Install (cacheSv);
   bind9.Install (NodeContainer (fakeRoot, trustAuth, subAuth));
+
+  // XXX: need to be implemented to UnboundHelper or createzones.rb
+  ::system ("cat files-2/tmp/namedb/*.key > files-4/tmp/namedb/auto-trust-anchor");
 #endif
 
   // 
