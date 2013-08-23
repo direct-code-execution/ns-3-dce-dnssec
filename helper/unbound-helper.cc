@@ -39,6 +39,7 @@ public:
       m_usemanualconf (false),
       m_binary ("unbound-host"),
       m_forwarder ("8.8.8.8 (need to configure:XXX)"),
+      m_isdnssec (true),
       m_iscache (false)
   {
   }
@@ -66,6 +67,7 @@ public:
   std::string m_binary;
   Ipv4Address m_forwarder;
   bool m_iscache;
+  bool m_isdnssec;
 
   virtual void
   Print (std::ostream& os) const
@@ -121,6 +123,20 @@ UnboundHelper::SetCacheServer (Ptr<Node> node)
 
   unbound_conf->m_iscache = true;
   SetBinary (NodeContainer (node), "unbound");
+  return;
+}
+
+void
+UnboundHelper::DisableDnssec (Ptr<Node> node)
+{
+  Ptr<UnboundConfig> unbound_conf = node->GetObject<UnboundConfig> ();
+  if (!unbound_conf)
+    {
+      unbound_conf = CreateObject<UnboundConfig> ();
+      node->AggregateObject (unbound_conf);
+    }
+
+  unbound_conf->m_isdnssec = false;
   return;
 }
 
@@ -204,7 +220,10 @@ UnboundHelper::GenerateConfig (Ptr<Node> node)
       conf << "verbosity: 8" << std::endl;
       conf << "logfile: \"unbound.log\"" << std::endl;
       conf << "root-hints: \"/etc/named.root\"" << std::endl;
-      conf << "auto-trust-anchor-file: \"/tmp/namedb/auto-trust-anchor\"" << std::endl;
+      if (unbound_conf->m_isdnssec)
+        {
+          conf << "auto-trust-anchor-file: \"/tmp/namedb/auto-trust-anchor\"" << std::endl;
+        }
       conf << "username: root" << std::endl;
       conf << "pidfile: \"/etc/unbound.pid\"" << std::endl;
       conf << "directory: \"/var/log/\"" << std::endl;

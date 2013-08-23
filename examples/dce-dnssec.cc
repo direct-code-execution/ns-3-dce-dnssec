@@ -241,6 +241,10 @@ int main (int argc, char *argv[])
   bind9.SetCacheServer (cacheSv.Get (0));
   bind9.Install (NodeContainer (fakeRoot, trustAuth, subAuth, cacheSv));
 #else
+  if (m_disableDnssec)
+    {
+      unbound.DisableDnssec (cacheSv.Get (0));
+    }
   unbound.SetCacheServer (cacheSv.Get (0));
   unbound.EnableDebug (cacheSv);
   unbound.Install (cacheSv);
