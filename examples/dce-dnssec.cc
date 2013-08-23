@@ -279,17 +279,26 @@ int main (int argc, char *argv[])
     {
       for (int i = 0; i < nNodes; i++)
 	{
+          if (m_disableDnssec)
+            {
+              bind9.DisableDnssec (client.Get (i));
+            }
 	  // node3 is forwarder
 	  unbound.SetForwarder (client.Get (i), "10.0.0.5");
 	  unbound.EnableDebug (client);
 	  for (int j = 0; j < numQuery; j++)
 	    {
+#if 0
 	      unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
 	         		 "mail.example.org.", "IN", "A");
+#else
+	      bind9.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
+	         		 "mail.example.org.", "IN", "A");
+#endif
 	      // unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
 	      //    		 "mail23mail23mail23mail23mail23mail23mail234mail234mail234.example.org.", "IN", "A");
 	    }
-	  unbound.Install (client.Get (i));
+          unbound.Install (client.Get (i));
 	}
     }
 

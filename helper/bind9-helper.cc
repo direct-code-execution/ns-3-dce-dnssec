@@ -488,8 +488,13 @@ Bind9Helper::SendQuery (Ptr<Node> node, Time at, std::string qname,
 {
   DceApplicationHelper process;
   ApplicationContainer apps;
-
-  //  NS_ASSERT_MSG (0, "Not working appropriately. Please use UnboundHelper::SendQuery for a while.");
+  Ptr<Bind9Config> bind9_conf = node->GetObject<Bind9Config> ();
+  if (!bind9_conf)
+    {
+      bind9_conf = new Bind9Config ();
+      node->AggregateObject (bind9_conf);
+    }
+  GenerateConfig (node);
 
   process.SetBinary ("dig");
   process.ResetArguments ();
@@ -498,7 +503,10 @@ Bind9Helper::SendQuery (Ptr<Node> node, Time at, std::string qname,
   process.ParseArguments ("-t");
   process.ParseArguments (type_name);
   process.ParseArguments ("-d");
-  process.ParseArguments ("+dnssec");
+  if (bind9_conf->m_isdnssec)
+    {
+      process.ParseArguments ("+dnssec");
+    }
   process.ParseArguments (qname);
   process.SetStackSize (1<<16);
   apps = process.Install (node);
