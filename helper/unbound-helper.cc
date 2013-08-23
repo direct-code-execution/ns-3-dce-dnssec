@@ -25,6 +25,7 @@
 #include <fstream>
 #include <map>
 #include <sys/stat.h>
+#include <unistd.h>
 
 namespace ns3 {
 
