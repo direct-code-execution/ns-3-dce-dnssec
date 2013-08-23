@@ -42,7 +42,7 @@ public:
       m_binary ("named"),
       m_iscache (false),
       m_isdnssec (true),
-      m_querylog (false)
+      m_querylog (true)         // FIXME: Setter
   {
     m_zones = new std::vector<std::string> ();
   }
@@ -254,10 +254,18 @@ Bind9Helper::GenerateConfig (Ptr<Node> node)
   conf << "  pid-file \"/var/run/named.pid\";"  << std::endl;
   conf << "  listen-on { any; };"  << std::endl;
   conf << "  listen-on-v6 { none; };"  << std::endl;
+  conf << "  dnssec-enable yes;"  << std::endl;
   if (bind9_conf->m_iscache)
     {
       conf << "  recursion yes;"  << std::endl;
+      conf << "  dnssec-validation auto;"  << std::endl;
+      //conf << "  dnssec-lookaside auto;"  << std::endl;
+      conf << "  bindkeys-file \"/tmp/namedb/auto-trust-anchor\";"  << std::endl;
     }
+  conf << "};"  << std::endl;
+
+  conf << "server 10.0.0.1 {"  << std::endl;
+  conf << "	edns no;"  << std::endl;
   conf << "};"  << std::endl;
 
   // FIXME: add EnableQueryLog()
