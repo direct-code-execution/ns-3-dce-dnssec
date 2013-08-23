@@ -67,7 +67,7 @@ set xzeroaxis
 set grid ytics
 
 plot \
-        'rtt-bytes.dat' w lp title "DNSSEC",  \
+        'rtt-bytes.dat' w lp pt 7 title "DNSSEC",  \
         'rtt-bytes-dns.dat' w lp title "DNS"
 
 # set terminal png lw 3 16
@@ -89,7 +89,7 @@ set xzeroaxis
 set grid ytics
 
 plot \
-        'loss-bytes.dat' w lp title "DNSSEC", \
+        'loss-bytes.dat' w lp pt 7 title "DNSSEC", \
         'loss-bytes-dns.dat' w lp title "DNS"
 
 # set terminal png lw 3 16
@@ -111,7 +111,7 @@ set xzeroaxis
 set grid ytics
 
 plot \
-        'qps-bytes.dat' w lp title "DNSSEC", \
+        'qps-bytes.dat' w lp pt 7 title "DNSSEC", \
         'qps-bytes-dns.dat' w lp title "DNS"
 
 # set terminal png lw 3 16
@@ -133,7 +133,7 @@ set xzeroaxis
 set grid ytics
 
 plot \
-        'resp-time-dnssec.dat' w p title "DNSSEC", \
+        'resp-time-dnssec.dat' w p pt 7 title "DNSSEC", \
         'resp-time-dns.dat' w p title "DNS"
 
 # set terminal png lw 3 16
