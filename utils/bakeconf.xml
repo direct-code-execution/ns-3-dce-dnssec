@@ -1004,7 +1004,7 @@
       <build type="autotools" objdir="no">
         <attribute name="configure_arguments" value="./configure CFLAGS=-fPIC LDFLAGS=-pie --prefix=$INSTALLDIR --disable-gost --with-ssl=$INSTALLDIR"/>
         <attribute name="install_arguments" value="-n" />
-        <attribute name="post_installation" value="cd $SRCDIR; mkdir -p $INSTALLDIR/bin_dce; /bin/cp .libs/unbound-host $INSTALLDIR/bin_dce;/bin/cp .libs/libunbound.so.2.1.1 $INSTALLDIR/lib; cd $INSTALLDIR/lib; ln -s libunbound.so.2.1.1 libunbound.so.2"/>
+        <attribute name="post_installation" value="cd $SRCDIR; mkdir -p $INSTALLDIR/bin_dce; /bin/cp unbound $INSTALLDIR/bin_dce; /bin/cp .libs/unbound-host $INSTALLDIR/bin_dce;/bin/cp .libs/libunbound.so.2.1.1 $INSTALLDIR/lib; cd $INSTALLDIR/lib; ln -s libunbound.so.2.1.1 libunbound.so.2"/>
       </build>
     </module>
 
