@@ -100,6 +100,7 @@ uint32_t m_qps = 1;
 bool m_disableDnssec = false;
 bool useQlog = false;
 double stopTime = 100.0;
+bool m_real = false;
 
 int main (int argc, char *argv[])
 {
@@ -112,10 +113,14 @@ int main (int argc, char *argv[])
   cmd.AddValue ("qps", "query per second (default 1qps)", m_qps);
   cmd.AddValue ("useQlog", "use bind9 query log as input of client queries (default none)", useQlog);
   cmd.AddValue ("disableDnssec", "disable DNSSEC (default enable)", m_disableDnssec);
+  cmd.AddValue ("real", "realtime simulation mode (default disable)", m_real);
   cmd.Parse (argc, argv);
 
-  // GlobalValue::Bind ("SimulatorImplementationType", 
-  //                    StringValue ("ns3::RealtimeSimulatorImpl"));
+  if (m_real)
+    {
+      GlobalValue::Bind ("SimulatorImplementationType", 
+                         StringValue ("ns3::RealtimeSimulatorImpl"));
+    }
 
   NodeContainer trustAuth, subAuth, fakeRoot, cacheSv, client;
   NodeContainer nodes;
@@ -229,11 +234,18 @@ int main (int argc, char *argv[])
 
   // 
   // Cache Server Configuration (node 4)
+  // 130823: use unbound for cache server (validator)
   // 
+#ifdef BIND9
   //  bind9.UseManualConfig (cacheSv);
   bind9.SetCacheServer (cacheSv.Get (0));
-
   bind9.Install (NodeContainer (fakeRoot, trustAuth, subAuth, cacheSv));
+#else
+  unbound.SetCacheServer (cacheSv.Get (0));
+  unbound.EnableDebug (cacheSv);
+  unbound.Install (cacheSv);
+  bind9.Install (NodeContainer (fakeRoot, trustAuth, subAuth));
+#endif
 
   // 
   // Client Configuration (node 5 - n)
@@ -266,12 +278,13 @@ int main (int argc, char *argv[])
 	{
 	  // node3 is forwarder
 	  unbound.SetForwarder (client.Get (i), "10.0.0.5");
+	  unbound.EnableDebug (client);
 	  for (int j = 0; j < numQuery; j++)
 	    {
 	      unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
-				 "mail.example.org.", "IN", "A");
-	      unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
-				 "mail23mail23mail23mail23mail23mail23mail234.example.org.", "IN", "A");
+	         		 "mail.example.org.", "IN", "A");
+	      // unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
+	      //    		 "mail23mail23mail23mail23mail23mail23mail234mail234mail234.example.org.", "IN", "A");
 	    }
 	  unbound.Install (client.Get (i));
 	}

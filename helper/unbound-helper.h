@@ -89,6 +89,7 @@ public:
   void SetForwarder (NodeContainer nodes, Ipv4Address fwd);
   void SendQuery (Ptr<Node> node, Time at, std::string qname, 
                   std::string class_name, std::string type_name);
+  void SetCacheServer (Ptr<Node> node);
 
 private:
   /**

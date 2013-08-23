@@ -37,7 +37,8 @@ public:
     : m_debug (false),
       m_usemanualconf (false),
       m_binary ("unbound-host"),
-      m_forwarder ("8.8.8.8 (need to configure:XXX)")
+      m_forwarder ("8.8.8.8 (need to configure:XXX)"),
+      m_iscache (false)
   {
   }
   ~UnboundConfig ()
@@ -63,6 +64,7 @@ public:
   bool m_usemanualconf;
   std::string m_binary;
   Ipv4Address m_forwarder;
+  bool m_iscache;
 
   virtual void
   Print (std::ostream& os) const
@@ -103,6 +105,21 @@ UnboundHelper::SetForwarder (NodeContainer nodes, Ipv4Address fwd)
         }
       unbound_conf->m_forwarder = fwd;
     }
+  return;
+}
+
+void
+UnboundHelper::SetCacheServer (Ptr<Node> node)
+{
+  Ptr<UnboundConfig> unbound_conf = node->GetObject<UnboundConfig> ();
+  if (!unbound_conf)
+    {
+      unbound_conf = CreateObject<UnboundConfig> ();
+      node->AggregateObject (unbound_conf);
+    }
+
+  unbound_conf->m_iscache = true;
+  SetBinary (NodeContainer (node), "unbound");
   return;
 }
 
@@ -165,7 +182,7 @@ UnboundHelper::GenerateConfig (Ptr<Node> node)
     }
 
   // config generation
-  std::stringstream conf_dir, conf_file;
+  std::stringstream conf_dir, conf_file, named_dir;
   // FIXME XXX
   conf_dir << "files-" << node->GetId () << "";
   ::mkdir (conf_dir.str ().c_str (), S_IRWXU | S_IRWXG);
@@ -175,7 +192,37 @@ UnboundHelper::GenerateConfig (Ptr<Node> node)
   conf_file << conf_dir.str () << "/unbound.conf";
   std::ofstream conf;
   conf.open (conf_file.str ().c_str ());
-  conf << *unbound_conf;
+  if (unbound_conf->m_iscache)
+    {
+      conf << "server:" << std::endl;
+      conf << "verbosity: 8" << std::endl;
+      conf << "logfile: \"unbound.log\"" << std::endl;
+      conf << "root-hints: \"/etc/named.root\"" << std::endl;
+      conf << "auto-trust-anchor-file: \"/tmp/namedb/auto-trust-anchor\"" << std::endl;
+      conf << "username: root" << std::endl;
+      conf << "pidfile: \"/etc/unbound.pid\"" << std::endl;
+      conf << "directory: \"/var/log/\"" << std::endl;
+      conf << "interface: 0.0.0.0" << std::endl;
+      conf << "log-time-ascii: yes" << std::endl;
+      conf << "access-control: 0.0.0.0/0 allow" << std::endl;
+      conf << "num-threads: 5" << std::endl;
+      conf << "do-daemonize: no" << std::endl;
+
+      // named.root
+      conf_file.str ("");
+      conf_file << conf_dir.str () << "/named.root";
+      std::ofstream rootf;
+      rootf.open (conf_file.str ().c_str ());
+      rootf << ".                        3600000  IN  NS    ns." << std::endl;
+      rootf << "ns.                      3600000      A  10.0.0.1" << std::endl;
+      rootf.close ();
+
+      named_dir << "files-" << node->GetId () << "/tmp";
+      ::mkdir (named_dir.str ().c_str (), S_IRWXU | S_IRWXG);
+      named_dir << "/namedb";
+      ::mkdir (named_dir.str ().c_str (), S_IRWXU | S_IRWXG);
+    }
+  //  conf << *unbound_conf;
   conf.close ();
 
   conf_file.str ("");
@@ -265,7 +312,7 @@ UnboundHelper::InstallPriv (Ptr<Node> node)
     {
       process.ParseArguments ("-d -d -v");
     }
-  process.ParseArguments ("-r");
+  process.ParseArguments ("-c /etc/unbound.conf");
   process.SetStackSize (1 << 16);
   apps.Add (process.Install (node));
   apps.Get (0)->SetStartTime (Seconds (1.0 + 0.01 * node->GetId ()));
