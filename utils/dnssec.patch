@@ -1,6 +1,6 @@
 diff -r b8ced6ccb82c model/dce-credentials.cc
 --- a/model/dce-credentials.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-credentials.cc	Fri Aug 23 16:02:01 2013 +0900
++++ b/model/dce-credentials.cc	Sun Aug 25 12:11:31 2013 +0900
 @@ -53,3 +53,15 @@
    int ret = eaccess (rPath.c_str (), mode);
    return ret;
@@ -17,26 +17,74 @@ diff -r b8ced6ccb82c model/dce-credentials.cc
 +  return 0;
 +}
 +
+diff -r b8ced6ccb82c model/dce-manager.cc
+--- a/model/dce-manager.cc	Thu Apr 18 17:28:13 2013 +0900
++++ b/model/dce-manager.cc	Sun Aug 25 12:11:31 2013 +0900
+@@ -115,6 +115,24 @@
+   Object::DoDispose ();
+ }
+ 
++// January 1st, 2010, 00:00:00
++uint32_t DceManager::m_timeBase = 1262304000;
++
++void
++DceManager::SetTimeBase (uint32_t timeBase)
++{
++  m_timeBase = timeBase;
++  return;
++}
++
++uint32_t
++DceManager::GetTimeBase (void)
++{
++  return m_timeBase;
++  //   unsigned long secondsSinceEpochOnFridayApril042008 = 1207284276;
++  //   return secondsSinceEpochOnFridayApril042008;
++}
++
+ struct ::Libc *
+ DceManager::GetLibc (void)
+ {
+diff -r b8ced6ccb82c model/dce-manager.h
+--- a/model/dce-manager.h	Thu Apr 18 17:28:13 2013 +0900
++++ b/model/dce-manager.h	Sun Aug 25 12:11:31 2013 +0900
+@@ -125,6 +125,8 @@
+   void SuspendTemporaryTask (uint16_t pid);
+   struct Process* CreateProcess (std::string name, std::string stdinfilename, std::vector<std::string> args,
+                                  std::vector<std::pair<std::string,std::string> > envs, int pid);
++  static void SetTimeBase (uint32_t timeBase);
++  static uint32_t GetTimeBase (void);
+ 
+ private:
+   // inherited from Object.
+@@ -161,6 +163,7 @@
+   // If true close stderr and stdout between writes .
+   bool m_minimizeFiles;
+   std::string m_virtualPath;
++  static uint32_t m_timeBase;
+ };
+ 
+ } // namespace ns3
 diff -r b8ced6ccb82c model/dce-poll.cc
 --- a/model/dce-poll.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-poll.cc	Fri Aug 23 16:02:01 2013 +0900
-@@ -187,11 +187,13 @@
++++ b/model/dce-poll.cc	Sun Aug 25 12:11:31 2013 +0900
+@@ -187,11 +187,8 @@
    // Some  code  calls  select() with all three sets empty, nfds zero, and a
    // non-NULL timeout as a fairly portable way to sleep with subsecond
    // precision.
-+#if 0
-   if (nfds == 0 && !timeout)
-     {
-       current->err = EINVAL;
-       return -1;
-     }
-+#endif
+-  if (nfds == 0 && !timeout)
+-    {
+-      current->err = EINVAL;
+-      return -1;
+-    }
++  // 130825: this condition will be passed by dce_poll ()
++
    struct pollfd pollFd[nfds];
    int j = 0;
  
 diff -r b8ced6ccb82c model/dce-stdio.cc
 --- a/model/dce-stdio.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-stdio.cc	Fri Aug 23 16:02:01 2013 +0900
++++ b/model/dce-stdio.cc	Sun Aug 25 12:11:31 2013 +0900
 @@ -759,6 +759,16 @@
    va_end (ap);
    return retval;
@@ -56,7 +104,7 @@ diff -r b8ced6ccb82c model/dce-stdio.cc
    NS_LOG_FUNCTION (Current () << UtilsGetNodeId () << stream);
 diff -r b8ced6ccb82c model/dce-stdio.h
 --- a/model/dce-stdio.h	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-stdio.h	Fri Aug 23 16:02:01 2013 +0900
++++ b/model/dce-stdio.h	Sun Aug 25 12:11:31 2013 +0900
 @@ -71,6 +71,10 @@
  int dce_asprintf (char **strp, const char *fmt, ...);
  int dce_vasprintf (char **strp, const char *fmt, va_list ap);
@@ -70,17 +118,16 @@ diff -r b8ced6ccb82c model/dce-stdio.h
  }
 diff -r b8ced6ccb82c model/dce-syslog.cc
 --- a/model/dce-syslog.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-syslog.cc	Fri Aug 23 16:02:01 2013 +0900
-@@ -66,4 +66,6 @@
++++ b/model/dce-syslog.cc	Sun Aug 25 12:11:31 2013 +0900
+@@ -66,4 +66,5 @@
    Process *process = Current ()->process;
  
    vfprintf (process->syslog, message, args);
 +  fprintf (process->syslog, "\n");
-+
  }
 diff -r b8ced6ccb82c model/dce-unistd.h
 --- a/model/dce-unistd.h	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-unistd.h	Fri Aug 23 16:02:01 2013 +0900
++++ b/model/dce-unistd.h	Sun Aug 25 12:11:31 2013 +0900
 @@ -77,6 +77,8 @@
  
  ssize_t dce_pread (int fd, void *buf, size_t count, off_t offset);
@@ -92,7 +139,7 @@ diff -r b8ced6ccb82c model/dce-unistd.h
  
 diff -r b8ced6ccb82c model/dce.cc
 --- a/model/dce.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce.cc	Fri Aug 23 16:02:01 2013 +0900
++++ b/model/dce.cc	Sun Aug 25 12:11:31 2013 +0900
 @@ -142,7 +142,7 @@
        return -1;
      }
@@ -102,37 +149,10 @@ diff -r b8ced6ccb82c model/dce.cc
      {
        current->err = EPERM;
        return -1;
-diff -r b8ced6ccb82c model/libc-dce.cc
---- a/model/libc-dce.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/libc-dce.cc	Fri Aug 23 16:02:01 2013 +0900
-@@ -96,6 +96,7 @@
- #include <langinfo.h>
- #include <sys/vfs.h>
- #include <termio.h>
-+#include <assert.h>
- 
- extern void __cxa_finalize (void *d);
- extern int __cxa_atexit (void (*func)(void *), void *arg, void *d);
-@@ -140,6 +141,7 @@
- typedef void (*func_t)(...);
- 
- extern "C" {
-+extern void *__memcpy_chk(void *dest, const void *src, size_t n, size_t __destlen);
- 
- void libc_dce (struct Libc **libc)
- {
 diff -r b8ced6ccb82c model/libc-ns3.h
 --- a/model/libc-ns3.h	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/libc-ns3.h	Fri Aug 23 16:02:01 2013 +0900
-@@ -114,6 +114,7 @@
- NATIVE (strcoll)
- NATIVE (memset)
- NATIVE (memcpy)
-+NATIVE (__memcpy_chk)
- NATIVE (bcopy)
- NATIVE (memcmp)
- NATIVE (memmove)
-@@ -252,6 +253,8 @@
++++ b/model/libc-ns3.h	Sun Aug 25 12:11:31 2013 +0900
+@@ -252,6 +252,8 @@
  DCE (daemon)
  DCE (alarm)
  DCE (readlink)
@@ -141,18 +161,7 @@ diff -r b8ced6ccb82c model/libc-ns3.h
  
  // SYS/UIO.H
  DCE (readv)
-@@ -265,8 +268,8 @@
- DCE (setlinebuf)
- DCE (fseek)
- DCE (ftell)
--DCE (fseeko)
--DCE (ftello)
-+//DCE (fseeko)
-+//DCE (ftello)
- DCE (rewind)
- DCE (fgetpos)
- DCE (fsetpos)
-@@ -307,6 +310,8 @@
+@@ -307,6 +309,8 @@
  DCE (remove)
  //NATIVE (sscanf)
  NATIVE_WITH_ALIAS2 (sscanf, __isoc99_sscanf)
@@ -161,7 +170,7 @@ diff -r b8ced6ccb82c model/libc-ns3.h
  
  // STDARG.H
  DCE (vprintf)
-@@ -375,6 +380,7 @@
+@@ -375,6 +379,7 @@
  NATIVE (sigismember)
  DCE (sigprocmask)
  DCE    (sigwait)
@@ -169,7 +178,7 @@ diff -r b8ced6ccb82c model/libc-ns3.h
  
  // PTHREAD.H
  DCE (pthread_create)
-@@ -413,6 +419,11 @@
+@@ -413,6 +418,11 @@
  NATIVE (pthread_setcancelstate)
  NATIVE (pthread_sigmask)
  NATIVE (pthread_equal)
@@ -181,7 +190,7 @@ diff -r b8ced6ccb82c model/libc-ns3.h
  
  // SEMAPHORE.H
  DCE (sem_init)
-@@ -508,6 +519,8 @@
+@@ -508,6 +518,8 @@
  NATIVE (bindtextdomain)
  NATIVE (textdomain)
  NATIVE (gettext)
@@ -190,7 +199,7 @@ diff -r b8ced6ccb82c model/libc-ns3.h
  
  // PWD.H
  NATIVE (getpwnam)
-@@ -569,6 +582,7 @@
+@@ -569,6 +581,7 @@
  DCE    (__fprintf_chk)
  DCE    (__snprintf_chk)
  DCE    (__errno_location)
@@ -200,7 +209,7 @@ diff -r b8ced6ccb82c model/libc-ns3.h
  DCE    (__lxstat)
 diff -r b8ced6ccb82c model/process-delay-model.cc
 --- a/model/process-delay-model.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/process-delay-model.cc	Fri Aug 23 16:02:01 2013 +0900
++++ b/model/process-delay-model.cc	Sun Aug 25 12:11:31 2013 +0900
 @@ -18,12 +18,14 @@
   * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
   */
@@ -232,7 +241,7 @@ diff -r b8ced6ccb82c model/process-delay-model.cc
      {
 diff -r b8ced6ccb82c model/task-manager.cc
 --- a/model/task-manager.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/task-manager.cc	Fri Aug 23 16:02:01 2013 +0900
++++ b/model/task-manager.cc	Sun Aug 25 12:11:31 2013 +0900
 @@ -445,6 +445,7 @@
              }
            if (m_reSchedule)
@@ -253,14 +262,52 @@ diff -r b8ced6ccb82c model/task-manager.cc
            // but before leaving, we check if we have further processes active, and,
 diff -r b8ced6ccb82c model/utils.cc
 --- a/model/utils.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/utils.cc	Fri Aug 23 16:02:01 2013 +0900
-@@ -145,6 +145,9 @@
- }
- static unsigned long TimeBase (void)
++++ b/model/utils.cc	Sun Aug 25 12:11:31 2013 +0900
+@@ -15,11 +15,21 @@
+ #include <fcntl.h>
+ #include <unistd.h>
+ #include "file-usage.h"
++#include "ns3/global-value.h"
++#include "ns3/uinteger.h"
+ 
+ NS_LOG_COMPONENT_DEFINE ("ProcessUtils");
+ 
+ namespace ns3 {
+ 
++GlobalValue g_timeBase = GlobalValue ("SimulationTimeBase",
++                                      "The timebase for this simulation",
++                                      // January 1st, 2010, 00:00:00
++                                      UintegerValue (1262304000),
++                                      MakeUintegerChecker<uint32_t> ());
++  //   unsigned long secondsSinceEpochOnFridayApril042008 = 1207284276;
++  //   return secondsSinceEpochOnFridayApril042008;
++
+ uint32_t UtilsGetNodeId (void)
  {
-+  static time_t g_time_base;
-+  g_time_base = ::time (NULL);
-+  return g_time_base;
- //   unsigned long secondsSinceEpochOnFridayApril042008 = 1207284276;
- //   return secondsSinceEpochOnFridayApril042008;
-   return 1262304000; // January 1st, 2010, 00:00:00
+   if (gDisposingThreadContext)
+@@ -143,19 +153,17 @@
+   tv.tv_nsec = n % 1000000000;
+   return tv;
+ }
+-static unsigned long TimeBase (void)
+-{
+-//   unsigned long secondsSinceEpochOnFridayApril042008 = 1207284276;
+-//   return secondsSinceEpochOnFridayApril042008;
+-  return 1262304000; // January 1st, 2010, 00:00:00
+-}
+ Time UtilsSimulationTimeToTime (Time time)
+ {
+-  return time + Seconds (TimeBase ());
++  UintegerValue uintegerValue;
++  GlobalValue::GetValueByName ("SimulationTimeBase", uintegerValue);
++  return time + Seconds (uintegerValue.Get ());
+ }
+ Time UtilsTimeToSimulationTime (Time time)
+ {
+-  return time - Seconds (TimeBase ());
++  UintegerValue uintegerValue;
++  GlobalValue::GetValueByName ("SimulationTimeBase", uintegerValue);
++  return time - Seconds (uintegerValue.Get ());
+ }
+ Time UtilsTimevalToTime (struct timeval tv)
+ {
