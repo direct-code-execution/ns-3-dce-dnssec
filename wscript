@@ -16,7 +16,6 @@ def options(opt):
 def configure(conf):
     ns3waf.check_modules(conf, ['core', 'network', 'internet'], mandatory = True)
     ns3waf.check_modules(conf, ['point-to-point', 'tap-bridge', 'csma'], mandatory = False)
-    ns3waf.check_modules(conf, ['dce', 'netlink'], mandatory = True)
     ns3waf.check_modules(conf, ['visualizer', 'mobility'], mandatory = False)
     conf.check_tool('compiler_cc')
 
