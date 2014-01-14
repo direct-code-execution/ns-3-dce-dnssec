@@ -36,7 +36,6 @@ def build_dce_examples(module, bld):
 
     module.add_example(needed = ['core', 'network', 'dce', 'netlink', 'point-to-point', 'dce-dnssec', 'mobility', 'csma', 'visualizer'], 
                        target='bin/dce-dnssec',
-                       linkflags=['-Wl,--dynamic-linker=' + os.path.abspath (bld.env['ELF_LOADER_PATH'] + '/ldso')],
                        source=['examples/dce-dnssec.cc'])
 
 def build(bld):    
@@ -53,7 +52,7 @@ def build(bld):
                                   source=module_source,
                                   headers=module_headers,
                                   use=uselib,
-                                  includes=['/usr/lib/ruby/1.8/x86_64-linux/'],
-                                  lib=['dl', 'ruby1.8'])
+                                  includes=[],
+                                  lib=['dl'])
     #build_dce_tests(module, bld)
     build_dce_examples(module, bld)

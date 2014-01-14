@@ -121,7 +121,7 @@ int main (int argc, char *argv[])
       GlobalValue::Bind ("SimulatorImplementationType", 
                          StringValue ("ns3::RealtimeSimulatorImpl"));
     }
-  GlobalValue::Bind ("SimulationTimeBase", 
+  GlobalValue::BindFailSafe ("SimulationTimeBase", 
                      UintegerValue (time (NULL)));
 
   NodeContainer trustAuth, subAuth, fakeRoot, cacheSv, client;

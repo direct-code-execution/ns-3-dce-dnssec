@@ -26,7 +26,6 @@
 #include <fstream>
 #include <map>
 #include <sys/stat.h>
-#include <ruby.h>
 
 namespace ns3 {
 NS_LOG_COMPONENT_DEFINE ("Bind9Helper");
@@ -103,9 +102,6 @@ std::ostream& operator << (std::ostream& os, Bind9Config const& config)
 
 Bind9Helper::Bind9Helper ()
 {
-  ruby_init();
-  ruby_init_loadpath();
-  // ruby_cleanup(0);
 }
 
 void
@@ -391,15 +387,7 @@ Bind9Helper::CreateZones (NodeContainer c)
   conf.close ();
 
   // call createzone.rb
-  int state;
-  const char *rb_argv[2] = {"--nsconfig=nsconfig.txt",  "--outdir=./"};
-  ruby_set_argv (2, (char **)rb_argv);
-  rb_load_protect (rb_str_new2("createzones/createzones.rb"), 0, &state);
-  if (state)
-    {
-      VALUE rbError = rb_funcall(rb_gv_get("$!"), rb_intern("message"), 0);
-      std::cerr << StringValuePtr(rbError) << std::endl;
-  }
+  ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./");
 
 }
 
