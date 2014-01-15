@@ -34,6 +34,7 @@ def build_dce_examples(module, bld):
                        source=['examples/dce-dns-simple.cc'])
 
     module.add_example(needed = ['core', 'network', 'dce', 'netlink', 'point-to-point', 'dce-dnssec', 'mobility', 'csma', 'visualizer'], 
+                       linkflags=['-Wl,--dynamic-linker=' + os.path.abspath (bld.env['ELF_LOADER_PATH'] + '/ldso')],
                        target='bin/dce-dnssec',
                        source=['examples/dce-dnssec.cc'])
 
