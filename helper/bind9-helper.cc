@@ -387,7 +387,7 @@ Bind9Helper::CreateZones (NodeContainer c)
   conf.close ();
 
   // call createzone.rb
-  ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./");
+  ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./ 2>&1 1> createzones.log");
 
 }
 
