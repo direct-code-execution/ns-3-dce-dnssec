@@ -126,18 +126,31 @@ int main (int argc, char *argv[])
 
   NodeContainer trustAuth, subAuth, fakeRoot, cacheSv, client;
   NodeContainer nodes;
+  std::map<std::string, std::list<Query> > query_map;
+  Bind9Helper bind9;
   fakeRoot.Create (1);
   trustAuth.Create (1);
   subAuth.Create (2);
   cacheSv.Create (1);
-  client.Create (nNodes);
+  if (!useQlog)
+    {
+      client.Create (nNodes);
+    }
+  else
+    {
+      //std::list<Query> query_list = bind9.ImportQueryLog ("myscripts/ns-3-dce-dnssec/examples/qlog.dat");
+      //      query_map = bind9.ImportQueryLog ("myscripts/ns-3-dce-dnssec/examples/queries.log");
+      query_map = bind9.ImportQueryLog ("queries.log");
+      client.Create (query_map.size ());
+    }
+
   nodes = NodeContainer (fakeRoot, trustAuth, subAuth, cacheSv, client);
   setPos (fakeRoot.Get (0), 0, 100, 0);
   setPos (trustAuth.Get (0), 0, 110, 0);
   setPos (subAuth.Get (0), -50, 120, 0);
   setPos (subAuth.Get (1), 50, 130, 0);
   setPos (cacheSv.Get (0), 0, 140, 0);
-  for (uint32_t i = 0; i < nNodes; i++)
+  for (uint32_t i = 0; i < client.GetN (); i++)
     {
       setPos (client.Get (i), -(50 * (nNodes-1)/2) + i*50, 200, 0);
     }
@@ -164,7 +177,7 @@ int main (int argc, char *argv[])
     }
 
   DceManagerHelper processManager;
-  //processManager.SetLoader ("ns3::DlmLoaderFactory");
+  processManager.SetLoader ("ns3::DlmLoaderFactory");
   if (m_delay)
     {
       processManager.SetDelayModel ("ns3::TimeOfDayProcessDelayModel");
@@ -188,7 +201,6 @@ int main (int argc, char *argv[])
 
   DceApplicationHelper process;
   ApplicationContainer apps;
-  Bind9Helper bind9;
   UnboundHelper unbound;
   // 
   // FakeRoot Configuration (node 0)
@@ -265,21 +277,25 @@ int main (int argc, char *argv[])
   uint32_t numQuery = m_qps * (stopTime - 10);
   if (useQlog)
     {
-      unbound.SetForwarder (client.Get (0), "10.0.0.5");
-      //std::list<Query> query_list = bind9.ImportQueryLog ("myscripts/ns-3-dce-dnssec/examples/qlog.dat");
-      std::list<Query> query_list = bind9.ImportQueryLog ("myscripts/ns-3-dce-dnssec/examples/queries.log");
-      std::list<Query>::iterator it = query_list.begin (); 
       int j = 0;
-      while (it != query_list.end())
-	{
-	  Query query = (*it);
-	  ++it;
-	  j++;
-	  unbound.SendQuery (client.Get (0), query.m_tx_timestamp,
-			     query.m_qname, query.m_class_name, 
-			     query.m_type_name);
-	}
-      unbound.Install (client.Get (0));
+      unbound.SetForwarder (client, "10.0.0.5");
+      for (std::map<std::string, std::list<Query> >::iterator i = query_map.begin();
+           i != query_map.end(); i++){
+        std::string key = (*i).first;
+        std::list<Query> val = (*i).second;
+
+        std::list<Query>::iterator it = val.begin (); 
+        while (it != val.end())
+          {
+            Query query = (*it);
+            ++it;
+            unbound.SendQuery (client.Get (j), query.m_tx_timestamp,
+                               query.m_qname, query.m_class_name, 
+                               query.m_type_name);
+          }
+        j++;
+      }
+      unbound.Install (client);
     }
   else
     {

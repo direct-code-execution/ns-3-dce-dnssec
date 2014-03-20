@@ -1,4 +1,4 @@
-01-Jan-2010 00:00:10.015 queries: client 10.0.0.6#42651: query: mail.example.org IN A +EDC (10.0.0.5)
+01-Jan-2010 00:00:10.015 queries: client 10.0.0.7#42651: query: mail.example.org IN A +EDC (10.0.0.5)
 01-Jan-2010 00:00:11.001 queries: client 10.0.0.6#5474: query: mail.example.org IN A +EDC (10.0.0.5)
 01-Jan-2010 00:00:12.001 queries: client 10.0.0.6#64473: query: mail.example.org IN A +EDC (10.0.0.5)
 01-Jan-2010 00:00:13.001 queries: client 10.0.0.6#26439: query: mail.example.org IN A +EDC (10.0.0.5)

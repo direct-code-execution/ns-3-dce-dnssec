@@ -387,21 +387,21 @@ Bind9Helper::CreateZones (NodeContainer c)
   conf.close ();
 
   // call createzone.rb
-  ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./ 2>&1 1> createzones.log");
+  ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./ >& createzones.log");
 
 }
 
-std::list <Query>
+std::map<std::string, std::list<Query> >
 Bind9Helper::ImportQueryLog (std::string logfile)
 {
   std::ifstream topgen;
   topgen.open (logfile.c_str ());
-  std::list<Query> query_list;
+  std::map<std::string, std::list<Query> > query_map;
 
   if (!topgen.is_open ())
     {
       NS_LOG_WARN ("Bind9 querylog file object is not open, check file name and permissions");
-      return query_list;
+      return query_map;
     }
 
   /*
@@ -415,6 +415,7 @@ Bind9Helper::ImportQueryLog (std::string logfile)
   std::string date;
   std::string timestamp;
   std::string qname;
+  std::string srcip_n_port;
   std::string class_name;
   std::string type_name;
   std::string recur_flag;
@@ -434,15 +435,18 @@ Bind9Helper::ImportQueryLog (std::string logfile)
       // {Date} {Time} {"queries:"} {"client"} {srcip#port":"} {"query:"} {name} {classname} {typename} {recursive flag} {resolver?}
       lineBuffer >> date;
       lineBuffer >> timestamp;
-      lineBuffer >> dummy;
-      lineBuffer >> dummy;
-      lineBuffer >> dummy;
-      lineBuffer >> dummy;
+      lineBuffer >> dummy;      // queries
+      lineBuffer >> dummy;      // client
+      lineBuffer >> srcip_n_port;
+      lineBuffer >> dummy;      // query:
       lineBuffer >> qname;
       lineBuffer >> class_name;
       lineBuffer >> type_name;
       lineBuffer >> recur_flag;
       lineBuffer >> dummy;
+
+      // srcip parse
+      std::string srcip = srcip_n_port.substr (0, srcip_n_port.find ("#"));
 
       if ((!qname.empty ()) && (!type_name.empty ()))
         {
@@ -460,14 +464,22 @@ Bind9Helper::ImportQueryLog (std::string logfile)
           Query query (Seconds (10 + tm.tm_sec) + MilliSeconds (atoi (ret + 1)) - startTime,
                        qname, class_name, type_name, recur_flag);
           NS_LOG_INFO ("tx timestamp " << query.m_tx_timestamp);
+
+          std::list<Query> query_list;
+          if (query_map.count (srcip) != 0)
+            {
+              std::map<std::string, std::list<Query> >::iterator it = query_map.find (srcip); 
+              query_list = (*it).second;
+            }
           query_list.push_back (query);
+          query_map[srcip] = query_list;
         }
     }
 
   NS_LOG_INFO ("Bind9 query log created with " << queryNum << " queries ");
   topgen.close ();
 
-  return query_list;
+  return query_map;
 }
 
 void
