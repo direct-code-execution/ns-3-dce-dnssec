@@ -105,6 +105,7 @@ public:
   void SetCacheServer (Ptr<Node> node);
   void DisableDnssec (Ptr<Node> node);
   std::map<std::string, std::list<Query> > ImportQueryLog (std::string logfile);
+  NodeContainer ImportNodesCreateZones (std::string logfile, bool disableDnssec);
   void SendQuery (Ptr<Node> node, Time at, std::string qname, 
                   std::string class_name, std::string type_name);
   void CallRndcStats (Ptr<Node> node, Time at);

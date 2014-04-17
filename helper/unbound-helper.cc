@@ -239,7 +239,7 @@ UnboundHelper::GenerateConfig (Ptr<Node> node)
       std::ofstream rootf;
       rootf.open (conf_file.str ().c_str ());
       rootf << ".                        3600000  IN  NS    ns." << std::endl;
-      rootf << "ns.                      3600000      A  10.0.0.1" << std::endl;
+      rootf << "ns.                      3600000      A  192.168.100.1" << std::endl;
       rootf.close ();
 
       named_dir << "files-" << node->GetId () << "/tmp";

@@ -23,6 +23,8 @@
 #include "bind9-helper.h"
 #include "ns3/dce-application-helper.h"
 #include "ns3/names.h"
+#include <iostream>
+#include <sstream>
 #include <fstream>
 #include <map>
 #include <sys/stat.h>
@@ -353,6 +355,7 @@ void
 Bind9Helper::CreateZones (NodeContainer c)
 {
   Ptr<Node> node;
+
   std::ofstream conf;
   conf.open ("./nsconfig.txt");
 
@@ -394,14 +397,24 @@ Bind9Helper::CreateZones (NodeContainer c)
 std::map<std::string, std::list<Query> >
 Bind9Helper::ImportQueryLog (std::string logfile)
 {
-  std::ifstream topgen;
-  topgen.open (logfile.c_str ());
+  std::istream* qlog;
+  std::ifstream qlogFile;
   std::map<std::string, std::list<Query> > query_map;
 
-  if (!topgen.is_open ())
+  if (logfile == "-")
     {
-      NS_LOG_WARN ("Bind9 querylog file object is not open, check file name and permissions");
-      return query_map;
+      qlog = &std::cin;
+      std::cout << "stdin" << std::endl;
+    }
+  else
+    {
+      qlogFile.open (logfile.c_str ());
+      if (!qlogFile.is_open ())
+        {
+          NS_LOG_WARN ("Bind9 querylog file object is not open, check file name and permissions");
+          return query_map;
+        }
+      qlog = &qlogFile;
     }
 
   /*
@@ -425,9 +438,8 @@ Bind9Helper::ImportQueryLog (std::string logfile)
   std::istringstream lineBuffer;
   std::string line;
 
-  for (int i = 0; !topgen.eof (); i++)
+  while (getline (*qlog, line))
     {
-      getline (topgen, line);
       queryNum++;
       lineBuffer.clear ();
       lineBuffer.str (line);
@@ -450,9 +462,6 @@ Bind9Helper::ImportQueryLog (std::string logfile)
 
       if ((!qname.empty ()) && (!type_name.empty ()))
         {
-          NS_LOG_INFO ("Query " << qname << " class: " << class_name << " type: " <<
-                       type_name << " flag: " << recur_flag);
-
           struct tm tm;
           char *ret = strptime (timestamp.c_str (), "%X", &tm);
           if (startTime == Seconds (0))
@@ -460,6 +469,10 @@ Bind9Helper::ImportQueryLog (std::string logfile)
               startTime = Seconds (tm.tm_sec);
               startTime += MilliSeconds (atoi (ret + 1));
             }
+
+          NS_LOG_INFO ("Query " << qname << " at " << Seconds (10 + tm.tm_sec) + MilliSeconds (atoi (ret + 1)) - startTime
+                       << " class: " << class_name << " type: "
+                       << type_name << " flag: " << recur_flag);
 
           Query query (Seconds (10 + tm.tm_sec) + MilliSeconds (atoi (ret + 1)) - startTime,
                        qname, class_name, type_name, recur_flag);
@@ -477,9 +490,45 @@ Bind9Helper::ImportQueryLog (std::string logfile)
     }
 
   NS_LOG_INFO ("Bind9 query log created with " << queryNum << " queries ");
-  topgen.close ();
+  if (logfile != "-")
+    {
+      qlogFile.close ();
+    }
 
   return query_map;
+}
+
+NodeContainer
+Bind9Helper::ImportNodesCreateZones (std::string logfile, bool disableDnssec)
+{
+  NodeContainer nodes;
+  std::string isdnssec = "";
+
+  ::system (std::string ("bash createzones/extract_names_fromlog.sh " 
+                         + logfile + " >& extract_names_fromlog.log").c_str ());
+  if (disableDnssec)
+    {
+      isdnssec = "-k";
+    }
+  ::system (std::string ("ruby createzones/creatensconfig.rb "
+                         + isdnssec + " > nsconfig.txt").c_str ());
+
+  std::ifstream nsconfig;
+  uint32_t linenum = 0;
+  std::string buf;
+  nsconfig.open ("nsconfig.txt");
+  while (!nsconfig.eof ())
+    {
+      getline (nsconfig, buf);
+      linenum++;
+    }
+  nsconfig.close ();
+
+  // call createzone.rb
+  ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./ >& createzones.log");
+
+  nodes.Create (linenum - 1);
+  return nodes;
 }
 
 void
@@ -545,7 +594,7 @@ ApplicationContainer
 Bind9Helper::Install (NodeContainer c)
 {
   ApplicationContainer apps;
-  CreateZones (c);
+  //  CreateZones (c);
   for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
     {
       apps.Add (InstallPriv (*i));

@@ -42,6 +42,10 @@ def build_dce_examples(module, bld):
                        target='bin/dce-dns-reflection',
                        source=['examples/dce-dns-reflection.cc'])
 
+    module.add_example(needed = ['core', 'network', 'dce', 'netlink', 'point-to-point', 'dce-dnssec', 'mobility', 'csma'], 
+                       target='bin/dce-dnssec-qlog-createzones',
+                       source=['examples/dce-dnssec-qlog-createzones.cc'])
+
 def build(bld):    
     module_source = [
         'helper/bind9-helper.cc',
