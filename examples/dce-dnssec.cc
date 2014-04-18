@@ -263,6 +263,8 @@ int main (int argc, char *argv[])
   unbound.SetCacheServer (cacheSv.Get (0));
   unbound.EnableDebug (cacheSv);
   unbound.Install (cacheSv);
+
+  ::system ("rm -f files-*/tmp/namedb/*.key");
   bind9.Install (NodeContainer (fakeRoot, trustAuth, subAuth));
 
   // XXX: need to be implemented to UnboundHelper or createzones.rb
