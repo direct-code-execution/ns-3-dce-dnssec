@@ -1,6 +1,6 @@
-diff -r b8ced6ccb82c model/dce-credentials.cc
---- a/model/dce-credentials.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-credentials.cc	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/dce-credentials.cc
+--- a/model/dce-credentials.cc	Sun May 12 22:05:18 2013 +0900
++++ b/model/dce-credentials.cc	Fri Apr 18 12:08:53 2014 +0900
 @@ -53,3 +53,15 @@
    int ret = eaccess (rPath.c_str (), mode);
    return ret;
@@ -17,9 +17,9 @@ diff -r b8ced6ccb82c model/dce-credentials.cc
 +  return 0;
 +}
 +
-diff -r b8ced6ccb82c model/dce-manager.cc
---- a/model/dce-manager.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-manager.cc	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/dce-manager.cc
+--- a/model/dce-manager.cc	Sun May 12 22:05:18 2013 +0900
++++ b/model/dce-manager.cc	Fri Apr 18 12:08:53 2014 +0900
 @@ -115,6 +115,24 @@
    Object::DoDispose ();
  }
@@ -45,9 +45,9 @@ diff -r b8ced6ccb82c model/dce-manager.cc
  struct ::Libc *
  DceManager::GetLibc (void)
  {
-diff -r b8ced6ccb82c model/dce-manager.h
---- a/model/dce-manager.h	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-manager.h	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/dce-manager.h
+--- a/model/dce-manager.h	Sun May 12 22:05:18 2013 +0900
++++ b/model/dce-manager.h	Fri Apr 18 12:08:53 2014 +0900
 @@ -125,6 +125,8 @@
    void SuspendTemporaryTask (uint16_t pid);
    struct Process* CreateProcess (std::string name, std::string stdinfilename, std::vector<std::string> args,
@@ -65,9 +65,9 @@ diff -r b8ced6ccb82c model/dce-manager.h
  };
  
  } // namespace ns3
-diff -r b8ced6ccb82c model/dce-poll.cc
---- a/model/dce-poll.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-poll.cc	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/dce-poll.cc
+--- a/model/dce-poll.cc	Sun May 12 22:05:18 2013 +0900
++++ b/model/dce-poll.cc	Fri Apr 18 12:08:53 2014 +0900
 @@ -187,11 +187,8 @@
    // Some  code  calls  select() with all three sets empty, nfds zero, and a
    // non-NULL timeout as a fairly portable way to sleep with subsecond
@@ -82,9 +82,9 @@ diff -r b8ced6ccb82c model/dce-poll.cc
    struct pollfd pollFd[nfds];
    int j = 0;
  
-diff -r b8ced6ccb82c model/dce-stdio.cc
---- a/model/dce-stdio.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-stdio.cc	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/dce-stdio.cc
+--- a/model/dce-stdio.cc	Sun May 12 22:05:18 2013 +0900
++++ b/model/dce-stdio.cc	Fri Apr 18 12:08:53 2014 +0900
 @@ -759,6 +759,16 @@
    va_end (ap);
    return retval;
@@ -102,9 +102,9 @@ diff -r b8ced6ccb82c model/dce-stdio.cc
  void dce___fpurge (FILE *stream)
  {
    NS_LOG_FUNCTION (Current () << UtilsGetNodeId () << stream);
-diff -r b8ced6ccb82c model/dce-stdio.h
---- a/model/dce-stdio.h	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-stdio.h	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/dce-stdio.h
+--- a/model/dce-stdio.h	Sun May 12 22:05:18 2013 +0900
++++ b/model/dce-stdio.h	Fri Apr 18 12:08:53 2014 +0900
 @@ -71,6 +71,10 @@
  int dce_asprintf (char **strp, const char *fmt, ...);
  int dce_vasprintf (char **strp, const char *fmt, va_list ap);
@@ -116,18 +116,18 @@ diff -r b8ced6ccb82c model/dce-stdio.h
  
  #ifdef __cplusplus
  }
-diff -r b8ced6ccb82c model/dce-syslog.cc
---- a/model/dce-syslog.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-syslog.cc	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/dce-syslog.cc
+--- a/model/dce-syslog.cc	Sun May 12 22:05:18 2013 +0900
++++ b/model/dce-syslog.cc	Fri Apr 18 12:08:53 2014 +0900
 @@ -66,4 +66,5 @@
    Process *process = Current ()->process;
  
    vfprintf (process->syslog, message, args);
 +  fprintf (process->syslog, "\n");
  }
-diff -r b8ced6ccb82c model/dce-unistd.h
---- a/model/dce-unistd.h	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce-unistd.h	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/dce-unistd.h
+--- a/model/dce-unistd.h	Sun May 12 22:05:18 2013 +0900
++++ b/model/dce-unistd.h	Fri Apr 18 12:08:53 2014 +0900
 @@ -77,6 +77,8 @@
  
  ssize_t dce_pread (int fd, void *buf, size_t count, off_t offset);
@@ -137,9 +137,9 @@ diff -r b8ced6ccb82c model/dce-unistd.h
  
  int dce_daemon (int nochdir, int noclose);
  
-diff -r b8ced6ccb82c model/dce.cc
---- a/model/dce.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/dce.cc	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/dce.cc
+--- a/model/dce.cc	Sun May 12 22:05:18 2013 +0900
++++ b/model/dce.cc	Fri Apr 18 12:08:53 2014 +0900
 @@ -142,7 +142,7 @@
        return -1;
      }
@@ -149,9 +149,9 @@ diff -r b8ced6ccb82c model/dce.cc
      {
        current->err = EPERM;
        return -1;
-diff -r b8ced6ccb82c model/libc-ns3.h
---- a/model/libc-ns3.h	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/libc-ns3.h	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/libc-ns3.h
+--- a/model/libc-ns3.h	Sun May 12 22:05:18 2013 +0900
++++ b/model/libc-ns3.h	Fri Apr 18 12:08:53 2014 +0900
 @@ -252,6 +252,8 @@
  DCE (daemon)
  DCE (alarm)
@@ -207,9 +207,68 @@ diff -r b8ced6ccb82c model/libc-ns3.h
  
  DCE    (__xstat)
  DCE    (__lxstat)
-diff -r b8ced6ccb82c model/process-delay-model.cc
---- a/model/process-delay-model.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/process-delay-model.cc	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/linux/linux-socket-impl.cc
+--- a/model/linux/linux-socket-impl.cc	Sun May 12 22:05:18 2013 +0900
++++ b/model/linux/linux-socket-impl.cc	Fri Apr 18 12:08:53 2014 +0900
+@@ -494,6 +494,31 @@
+ }
+ 
+ void
++LinuxSocketImpl::Setsockopt (int level, int optname,
++                             const void *optval, socklen_t optlen)
++{
++  NS_LOG_FUNCTION (level << optname << optval << optlen);
++  uint16_t pid = EnterFakeTask ();
++  int ret = this->m_kernsock->Setsockopt (level, optname,
++                                          optval, optlen);
++  NS_LOG_INFO ("setsockopt returns " << ret << " errno " << Current ()->err);
++  LeaveFakeTask (pid);
++  return;
++}
++int
++LinuxSocketImpl::Getsockopt (int level, int optname,
++                             void *optval, socklen_t *optlen)
++{
++  NS_LOG_FUNCTION (level << optname << optval << optlen);
++  uint16_t pid = EnterFakeTask ();
++  int ret = this->m_kernsock->Getsockopt (level, optname,
++                                          optval, optlen);
++  NS_LOG_INFO ("getsockopt returns " << ret << " errno " << Current ()->err);
++  LeaveFakeTask (pid);
++  return ret;
++}
++
++void
+ LinuxSocketImpl::Poll ()
+ {
+   NS_LOG_FUNCTION (this);
+@@ -568,7 +593,7 @@
+           else
+             {
+               // FIXME: handle closed socket
+-              if (mask & POLLRDHUP || mask & POLLHUP)
++              if (mask & POLLRDHUP || mask & POLLHUP || mask & POLLERR)
+                 {
+                   NS_LOG_FUNCTION ("socket has closed ?" << mask);
+                   // FIXME: may need m_closed flag
+diff -r 724aeaa69685 model/linux/linux-socket-impl.h
+--- a/model/linux/linux-socket-impl.h	Sun May 12 22:05:18 2013 +0900
++++ b/model/linux/linux-socket-impl.h	Fri Apr 18 12:08:53 2014 +0900
+@@ -69,6 +69,11 @@
+   virtual bool GetAllowBroadcast () const;
+   void Poll ();
+ 
++  void Setsockopt (int level, int optname,
++                   const void *optval, socklen_t optlen);
++  int Getsockopt (int level, int optname,
++                void *optval, socklen_t *optlen);
++
+   Address PosixAddressToNs3Address (const struct sockaddr *my_addr, socklen_t addrlen);
+   int Ns3AddressToPosixAddress (const Address& nsaddr,
+                                 struct sockaddr *addr, socklen_t *addrlen);
+diff -r 724aeaa69685 model/process-delay-model.cc
+--- a/model/process-delay-model.cc	Sun May 12 22:05:18 2013 +0900
++++ b/model/process-delay-model.cc	Fri Apr 18 12:08:53 2014 +0900
 @@ -18,12 +18,14 @@
   * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
   */
@@ -239,9 +298,9 @@ diff -r b8ced6ccb82c model/process-delay-model.cc
    Time delay = GetTimeOfDay () - m_start;
    if (delay.IsZero ())
      {
-diff -r b8ced6ccb82c model/task-manager.cc
---- a/model/task-manager.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/task-manager.cc	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/task-manager.cc
+--- a/model/task-manager.cc	Sun May 12 22:05:18 2013 +0900
++++ b/model/task-manager.cc	Fri Apr 18 12:08:53 2014 +0900
 @@ -445,6 +445,7 @@
              }
            if (m_reSchedule)
@@ -260,9 +319,9 @@ diff -r b8ced6ccb82c model/task-manager.cc
        if (next != 0)
          {
            // but before leaving, we check if we have further processes active, and,
-diff -r b8ced6ccb82c model/utils.cc
---- a/model/utils.cc	Thu Apr 18 17:28:13 2013 +0900
-+++ b/model/utils.cc	Sun Aug 25 12:11:31 2013 +0900
+diff -r 724aeaa69685 model/utils.cc
+--- a/model/utils.cc	Sun May 12 22:05:18 2013 +0900
++++ b/model/utils.cc	Fri Apr 18 12:08:53 2014 +0900
 @@ -15,11 +15,21 @@
  #include <fcntl.h>
  #include <unistd.h>

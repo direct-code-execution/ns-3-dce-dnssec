@@ -192,6 +192,7 @@ int main (int argc, char *argv[])
     {
       AddAddress (nodes.Get (n), Seconds (0.1), "sim0", "10.0.0.", 1 + n, "/8");
       AddAddress (nodes.Get (n), Seconds (0.1), "sim0", "192.168.255.", 51 + n, "/24");
+      AddAddress (nodes.Get (n), Seconds (0.1), "sim0", "192.168.100.", 1 + n, "/24");
       RunIp (nodes.Get (n), Seconds (0.2), "link set lo up");
       RunIp (nodes.Get (n), Seconds (0.2), "link set sim0 up");
       // RunIp (nodes.Get (n), Seconds (0.2), "link show");

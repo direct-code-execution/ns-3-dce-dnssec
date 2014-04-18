@@ -355,6 +355,7 @@ void
 Bind9Helper::CreateZones (NodeContainer c)
 {
   Ptr<Node> node;
+  bool manual_nsconfig = false;
 
   std::ofstream conf;
   conf.open ("./nsconfig.txt");
@@ -385,12 +386,16 @@ Bind9Helper::CreateZones (NodeContainer c)
           else
             conf << " no";
           conf << std::endl;
+          manual_nsconfig = true;
         }
     }
   conf.close ();
 
   // call createzone.rb
-  ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./ >& createzones.log");
+  if (manual_nsconfig)
+    {
+      ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./ >& createzones.log");
+    }
 
 }
 
@@ -594,7 +599,7 @@ ApplicationContainer
 Bind9Helper::Install (NodeContainer c)
 {
   ApplicationContainer apps;
-  //  CreateZones (c);
+  CreateZones (c);
   for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
     {
       apps.Add (InstallPriv (*i));
