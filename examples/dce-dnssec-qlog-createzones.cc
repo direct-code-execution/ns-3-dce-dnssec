@@ -202,8 +202,12 @@ int main (int argc, char *argv[])
   std::ostringstream oss;
   oss << cacheSv.Get (0)->GetId ();
   ::system ((std::string ("rm -f files-") + oss.str () + "/tmp/namedb/auto-trust-anchor").c_str ());
-  ::system ((std::string ("cat files-2/tmp/namedb/*.key > files-") 
+  ::system ((std::string ("cat files-0/tmp/namedb/*.key > files-") 
              + oss.str () +"/tmp/namedb/auto-trust-anchor").c_str ());
+  // ::system ((std::string ("cp `grep -H \"DNSKEY 256\" files-0/tmp/namedb/*.key | awk '{print $1}' | sed \"s/:.//\"` files-") 
+  //             + oss.str () +"/tmp/namedb/auto-trust-anchor").c_str ());
+  // ::system ((std::string ("unbound-anchor -a files-") 
+  //             + oss.str () +"/tmp/namedb/auto-trust-anchor").c_str ());
 
   DceApplicationHelper process;
   ApplicationContainer apps;
@@ -259,7 +263,8 @@ int main (int argc, char *argv[])
       for (int j = 0; j < numQuery; j++)
         {
           bind9.SendQuery (client.Get (0), Seconds (10 + (1.0/m_qps)*j),
-                           "sg98.nc.u-tokyo.ac.jp.", "IN", "A");
+                           "net.", "IN", "SOA");
+          //                "sg98.nc.u-tokyo.ac.jp.", "IN", "A");
           //                           "e3191.dscc.akamaiedge.net.", "IN", "A");
 
         }

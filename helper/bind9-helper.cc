@@ -394,7 +394,7 @@ Bind9Helper::CreateZones (NodeContainer c)
   // call createzone.rb
   if (manual_nsconfig)
     {
-      ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./ >& createzones.log");
+      ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./ > createzones.log 2>&1");
     }
 
 }
@@ -510,7 +510,7 @@ Bind9Helper::ImportNodesCreateZones (std::string logfile, bool disableDnssec)
   std::string isdnssec = "";
 
   ::system (std::string ("bash createzones/extract_names_fromlog.sh " 
-                         + logfile + " >& extract_names_fromlog.log").c_str ());
+                         + logfile + " > extract_names_fromlog.log 2>&1").c_str ());
   if (disableDnssec)
     {
       isdnssec = "-k";
@@ -530,7 +530,7 @@ Bind9Helper::ImportNodesCreateZones (std::string logfile, bool disableDnssec)
   nsconfig.close ();
 
   // call createzone.rb
-  ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./ >& createzones.log");
+  ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./ > createzones.log 2>&1");
 
   nodes.Create (linenum - 1);
   return nodes;
@@ -599,7 +599,7 @@ ApplicationContainer
 Bind9Helper::Install (NodeContainer c)
 {
   ApplicationContainer apps;
-  CreateZones (c);
+  //  CreateZones (c);
   for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
     {
       apps.Add (InstallPriv (*i));
