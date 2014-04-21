@@ -174,9 +174,9 @@ int main (int argc, char *argv[])
   processManager.Install (client);
 
   Ipv4AddressHelper address;
-  address.SetBase ("192.168.100.0", "255.255.255.0");
+  address.SetBase ("192.168.0.0", "255.255.0.0", "0.0.100.1");
   address.Assign (devices);
-  address.SetBase ("192.168.0.0", "255.255.255.0");
+  address.SetBase ("192.168.0.0", "255.255.0.0");
   address.Assign (devices);
 
   if (m_disableDnssec)
