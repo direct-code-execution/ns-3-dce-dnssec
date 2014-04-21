@@ -1,25 +1,6 @@
-diff -r 724aeaa69685 model/dce-credentials.cc
---- a/model/dce-credentials.cc	Sun May 12 22:05:18 2013 +0900
-+++ b/model/dce-credentials.cc	Fri Apr 18 12:08:53 2014 +0900
-@@ -53,3 +53,15 @@
-   int ret = eaccess (rPath.c_str (), mode);
-   return ret;
- }
-+int dce_chown(const char *path, uid_t owner, gid_t group)
-+{
-+  // XXX
-+  return 0;
-+}
-+
-+int dce_initgroups(const char *user, gid_t group)
-+{
-+  // XXX
-+  return 0;
-+}
-+
-diff -r 724aeaa69685 model/dce-manager.cc
---- a/model/dce-manager.cc	Sun May 12 22:05:18 2013 +0900
-+++ b/model/dce-manager.cc	Fri Apr 18 12:08:53 2014 +0900
+diff -r 2a6212bffe85 model/dce-manager.cc
+--- a/model/dce-manager.cc	Thu Dec 19 22:00:01 2013 +0900
++++ b/model/dce-manager.cc	Mon Apr 21 13:26:05 2014 +0900
 @@ -115,6 +115,24 @@
    Object::DoDispose ();
  }
@@ -45,9 +26,9 @@ diff -r 724aeaa69685 model/dce-manager.cc
  struct ::Libc *
  DceManager::GetLibc (void)
  {
-diff -r 724aeaa69685 model/dce-manager.h
---- a/model/dce-manager.h	Sun May 12 22:05:18 2013 +0900
-+++ b/model/dce-manager.h	Fri Apr 18 12:08:53 2014 +0900
+diff -r 2a6212bffe85 model/dce-manager.h
+--- a/model/dce-manager.h	Thu Dec 19 22:00:01 2013 +0900
++++ b/model/dce-manager.h	Mon Apr 21 13:26:05 2014 +0900
 @@ -125,6 +125,8 @@
    void SuspendTemporaryTask (uint16_t pid);
    struct Process* CreateProcess (std::string name, std::string stdinfilename, std::vector<std::string> args,
@@ -65,152 +46,79 @@ diff -r 724aeaa69685 model/dce-manager.h
  };
  
  } // namespace ns3
-diff -r 724aeaa69685 model/dce-poll.cc
---- a/model/dce-poll.cc	Sun May 12 22:05:18 2013 +0900
-+++ b/model/dce-poll.cc	Fri Apr 18 12:08:53 2014 +0900
-@@ -187,11 +187,8 @@
-   // Some  code  calls  select() with all three sets empty, nfds zero, and a
-   // non-NULL timeout as a fairly portable way to sleep with subsecond
-   // precision.
--  if (nfds == 0 && !timeout)
--    {
--      current->err = EINVAL;
--      return -1;
--    }
-+  // 130825: this condition will be passed by dce_poll ()
-+
-   struct pollfd pollFd[nfds];
-   int j = 0;
+diff -r 2a6212bffe85 model/dce-signal.h
+--- a/model/dce-signal.h	Thu Dec 19 22:00:01 2013 +0900
++++ b/model/dce-signal.h	Mon Apr 21 13:26:05 2014 +0900
+@@ -16,6 +16,9 @@
+ int dce_kill (pid_t pid, int sig);
+ int dce_pthread_kill (pthread_t thread, int sig);
+ void dce_abort ();
++void dce___assert_fail (const char *__assertion, const char *__file,
++                        unsigned int __line, const char *__function);
++void dce___stack_chk_fail (void);
+ int dce_sigprocmask (int how, const sigset_t *set, sigset_t *oldset);
+ int dce_sigwait (const sigset_t *set, int *sig);
  
-diff -r 724aeaa69685 model/dce-stdio.cc
---- a/model/dce-stdio.cc	Sun May 12 22:05:18 2013 +0900
-+++ b/model/dce-stdio.cc	Fri Apr 18 12:08:53 2014 +0900
-@@ -759,6 +759,16 @@
-   va_end (ap);
-   return retval;
+diff -r 2a6212bffe85 model/dce.cc
+--- a/model/dce.cc	Thu Dec 19 22:00:01 2013 +0900
++++ b/model/dce.cc	Mon Apr 21 13:26:05 2014 +0900
+@@ -265,6 +265,18 @@
+   dce_exit (-2);
  }
-+int dce___vsnprintf_chk (char *__restrict __s, size_t __n, int __flag,
-+						size_t __slen,
-+						__const char *__restrict __format, _G_va_list __ap)
+ 
++void dce___assert_fail (const char *__assertion, const char *__file,
++                        unsigned int __line, const char *__function)
 +{
-+  NS_LOG_FUNCTION (Current () << UtilsGetNodeId ());
-+  NS_ASSERT (Current () != 0);
-+
-+  int retval = vsnprintf (__s, __n, __format, __ap);
-+  return retval;
++  dce_abort ();
 +}
- void dce___fpurge (FILE *stream)
++
++void
++dce___stack_chk_fail (void)
++{
++  dce_abort ();
++}
++
+ int dce_pause (void)
  {
-   NS_LOG_FUNCTION (Current () << UtilsGetNodeId () << stream);
-diff -r 724aeaa69685 model/dce-stdio.h
---- a/model/dce-stdio.h	Sun May 12 22:05:18 2013 +0900
-+++ b/model/dce-stdio.h	Fri Apr 18 12:08:53 2014 +0900
-@@ -71,6 +71,10 @@
- int dce_asprintf (char **strp, const char *fmt, ...);
- int dce_vasprintf (char **strp, const char *fmt, va_list ap);
- int dce_vsnprintf (char *s, size_t si, const char *f, va_list ap);
-+int dce___vsnprintf_chk (char *__restrict __s, size_t __n, int __flag,
-+                                               size_t __slen,
-+                         __const char *__restrict __format, _G_va_list __ap);
-+
+   //Thread *current = Current ();
+diff -r 2a6212bffe85 model/libc-dce.cc
+--- a/model/libc-dce.cc	Thu Dec 19 22:00:01 2013 +0900
++++ b/model/libc-dce.cc	Mon Apr 21 13:26:05 2014 +0900
+@@ -138,6 +138,7 @@
+ __THROW;
+ extern int __obstack_vprintf_chk (struct obstack *, int, const char *,
+                                   _G_va_list) __THROW;
++extern void __stack_chk_fail (void);
  
- #ifdef __cplusplus
- }
-diff -r 724aeaa69685 model/dce-syslog.cc
---- a/model/dce-syslog.cc	Sun May 12 22:05:18 2013 +0900
-+++ b/model/dce-syslog.cc	Fri Apr 18 12:08:53 2014 +0900
-@@ -66,4 +66,5 @@
-   Process *process = Current ()->process;
+ typedef void (*func_t)(...);
  
-   vfprintf (process->syslog, message, args);
-+  fprintf (process->syslog, "\n");
- }
-diff -r 724aeaa69685 model/dce-unistd.h
---- a/model/dce-unistd.h	Sun May 12 22:05:18 2013 +0900
-+++ b/model/dce-unistd.h	Fri Apr 18 12:08:53 2014 +0900
-@@ -77,6 +77,8 @@
+diff -r 2a6212bffe85 model/libc-ns3.h
+--- a/model/libc-ns3.h	Thu Dec 19 22:00:01 2013 +0900
++++ b/model/libc-ns3.h	Mon Apr 21 13:26:05 2014 +0900
+@@ -105,6 +105,8 @@
+ DCE (clearenv)
+ NATIVE (qsort)
+ DCE (abort)
++DCE (__assert_fail)
++DCE (__stack_chk_fail)
+ DCE (mkstemp)
+ DCE (rename)
  
- ssize_t dce_pread (int fd, void *buf, size_t count, off_t offset);
- ssize_t dce_pwrite (int fd, const void *buf, size_t count, off_t offset);
-+int dce_chown(const char *path, uid_t owner, gid_t group);
-+int dce_initgroups(const char *user, gid_t group);
- 
- int dce_daemon (int nochdir, int noclose);
- 
-diff -r 724aeaa69685 model/dce.cc
---- a/model/dce.cc	Sun May 12 22:05:18 2013 +0900
-+++ b/model/dce.cc	Fri Apr 18 12:08:53 2014 +0900
-@@ -142,7 +142,7 @@
-       return -1;
-     }
-   if (sgid != (gid_t)-1
--      || !is_set_ucapable (sgid))
-+      && !is_set_ucapable (sgid))
-     {
-       current->err = EPERM;
-       return -1;
-diff -r 724aeaa69685 model/libc-ns3.h
---- a/model/libc-ns3.h	Sun May 12 22:05:18 2013 +0900
-+++ b/model/libc-ns3.h	Fri Apr 18 12:08:53 2014 +0900
-@@ -252,6 +252,8 @@
- DCE (daemon)
- DCE (alarm)
- DCE (readlink)
-+DCE (chown)
-+DCE (initgroups)
- 
- // SYS/UIO.H
- DCE (readv)
-@@ -307,6 +309,8 @@
- DCE (remove)
- //NATIVE (sscanf)
- NATIVE_WITH_ALIAS2 (sscanf, __isoc99_sscanf)
-+NATIVE (flockfile)
-+NATIVE (funlockfile)
- 
- // STDARG.H
- DCE (vprintf)
-@@ -375,6 +379,7 @@
- NATIVE (sigismember)
- DCE (sigprocmask)
- DCE    (sigwait)
-+DCE    (kill)
- 
- // PTHREAD.H
- DCE (pthread_create)
-@@ -413,6 +418,11 @@
- NATIVE (pthread_setcancelstate)
- NATIVE (pthread_sigmask)
- NATIVE (pthread_equal)
-+NATIVE (pthread_spin_init)
-+NATIVE (pthread_spin_lock)
-+NATIVE (pthread_spin_unlock)
-+NATIVE (pthread_spin_destroy)
-+
- 
- // SEMAPHORE.H
- DCE (sem_init)
-@@ -508,6 +518,8 @@
- NATIVE (bindtextdomain)
- NATIVE (textdomain)
- NATIVE (gettext)
-+NATIVE (catopen)
-+NATIVE (catgets)
- 
- // PWD.H
- NATIVE (getpwnam)
-@@ -569,6 +581,7 @@
- DCE    (__fprintf_chk)
- DCE    (__snprintf_chk)
- DCE    (__errno_location)
-+DCE    (__vsnprintf_chk)
- 
- DCE    (__xstat)
- DCE    (__lxstat)
-diff -r 724aeaa69685 model/linux/linux-socket-impl.cc
---- a/model/linux/linux-socket-impl.cc	Sun May 12 22:05:18 2013 +0900
-+++ b/model/linux/linux-socket-impl.cc	Fri Apr 18 12:08:53 2014 +0900
-@@ -494,6 +494,31 @@
+diff -r 2a6212bffe85 model/linux-socket-fd-factory.cc
+--- a/model/linux-socket-fd-factory.cc	Thu Dec 19 22:00:01 2013 +0900
++++ b/model/linux-socket-fd-factory.cc	Mon Apr 21 13:26:05 2014 +0900
+@@ -382,6 +382,7 @@
+ void
+ LinuxSocketFdFactory::DevXmit (struct SimKernel *kernel, struct SimDevice *dev, unsigned char *data, int len)
+ {
++  NS_LOG_FUNCTION (dev);
+   LinuxSocketFdFactory *self = (LinuxSocketFdFactory *)kernel;
+   NetDevice *nsDev = (NetDevice *)self->m_exported->dev_get_private (dev);
+   NS_ASSERT (len >= 14);
+diff -r 2a6212bffe85 model/linux/linux-socket-impl.cc
+--- a/model/linux/linux-socket-impl.cc	Thu Dec 19 22:00:01 2013 +0900
++++ b/model/linux/linux-socket-impl.cc	Mon Apr 21 13:26:05 2014 +0900
+@@ -514,6 +514,31 @@
  }
  
  void
@@ -242,7 +150,7 @@ diff -r 724aeaa69685 model/linux/linux-socket-impl.cc
  LinuxSocketImpl::Poll ()
  {
    NS_LOG_FUNCTION (this);
-@@ -568,7 +593,7 @@
+@@ -588,7 +613,7 @@
            else
              {
                // FIXME: handle closed socket
@@ -251,9 +159,9 @@ diff -r 724aeaa69685 model/linux/linux-socket-impl.cc
                  {
                    NS_LOG_FUNCTION ("socket has closed ?" << mask);
                    // FIXME: may need m_closed flag
-diff -r 724aeaa69685 model/linux/linux-socket-impl.h
---- a/model/linux/linux-socket-impl.h	Sun May 12 22:05:18 2013 +0900
-+++ b/model/linux/linux-socket-impl.h	Fri Apr 18 12:08:53 2014 +0900
+diff -r 2a6212bffe85 model/linux/linux-socket-impl.h
+--- a/model/linux/linux-socket-impl.h	Thu Dec 19 22:00:01 2013 +0900
++++ b/model/linux/linux-socket-impl.h	Mon Apr 21 13:26:05 2014 +0900
 @@ -69,6 +69,11 @@
    virtual bool GetAllowBroadcast () const;
    void Poll ();
@@ -266,107 +174,3 @@ diff -r 724aeaa69685 model/linux/linux-socket-impl.h
    Address PosixAddressToNs3Address (const struct sockaddr *my_addr, socklen_t addrlen);
    int Ns3AddressToPosixAddress (const Address& nsaddr,
                                  struct sockaddr *addr, socklen_t *addrlen);
-diff -r 724aeaa69685 model/process-delay-model.cc
---- a/model/process-delay-model.cc	Sun May 12 22:05:18 2013 +0900
-+++ b/model/process-delay-model.cc	Fri Apr 18 12:08:53 2014 +0900
-@@ -18,12 +18,14 @@
-  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
-  */
- #include "process-delay-model.h"
-+#include "ns3/log.h"
- #include <sys/time.h>
- #include <time.h>
- 
- namespace ns3 {
- 
- NS_OBJECT_ENSURE_REGISTERED (ProcessDelayModel);
-+NS_LOG_COMPONENT_DEFINE ("ProcessDelayModel");
- 
- TypeId
- ProcessDelayModel::GetTypeId (void)
-@@ -99,11 +101,13 @@
- void
- TimeOfDayProcessDelayModel::RecordStart (void)
- {
-+  NS_LOG_FUNCTION (this);
-   m_start = GetTimeOfDay ();
- }
- Time
- TimeOfDayProcessDelayModel::RecordEnd (void)
- {
-+  NS_LOG_FUNCTION (this);
-   Time delay = GetTimeOfDay () - m_start;
-   if (delay.IsZero ())
-     {
-diff -r 724aeaa69685 model/task-manager.cc
---- a/model/task-manager.cc	Sun May 12 22:05:18 2013 +0900
-+++ b/model/task-manager.cc	Fri Apr 18 12:08:53 2014 +0900
-@@ -445,6 +445,7 @@
-             }
-           if (m_reSchedule)
-             {
-+              NS_LOG_DEBUG ("Delayed schedule " << m_reScheduleTime);
-               m_reSchedule = false;
-               if (m_reScheduleTime > Time (0))
-                 {
-@@ -473,8 +474,8 @@
-       // we have something to schedule from.
-       // but, we have nothing to schedule to so, we go back to the main task.
-       Time delay = m_delayModel->RecordEnd ();
--      NS_LOG_DEBUG ("Leaving " << m_current << ", delay " << delay << " entering main");
-       struct Task *next = m_scheduler->PeekNext ();
-+      NS_LOG_DEBUG ("Leaving " << m_current << ", delay " << delay << " next = " << next << " entering main");
-       if (next != 0)
-         {
-           // but before leaving, we check if we have further processes active, and,
-diff -r 724aeaa69685 model/utils.cc
---- a/model/utils.cc	Sun May 12 22:05:18 2013 +0900
-+++ b/model/utils.cc	Fri Apr 18 12:08:53 2014 +0900
-@@ -15,11 +15,21 @@
- #include <fcntl.h>
- #include <unistd.h>
- #include "file-usage.h"
-+#include "ns3/global-value.h"
-+#include "ns3/uinteger.h"
- 
- NS_LOG_COMPONENT_DEFINE ("ProcessUtils");
- 
- namespace ns3 {
- 
-+GlobalValue g_timeBase = GlobalValue ("SimulationTimeBase",
-+                                      "The timebase for this simulation",
-+                                      // January 1st, 2010, 00:00:00
-+                                      UintegerValue (1262304000),
-+                                      MakeUintegerChecker<uint32_t> ());
-+  //   unsigned long secondsSinceEpochOnFridayApril042008 = 1207284276;
-+  //   return secondsSinceEpochOnFridayApril042008;
-+
- uint32_t UtilsGetNodeId (void)
- {
-   if (gDisposingThreadContext)
-@@ -143,19 +153,17 @@
-   tv.tv_nsec = n % 1000000000;
-   return tv;
- }
--static unsigned long TimeBase (void)
--{
--//   unsigned long secondsSinceEpochOnFridayApril042008 = 1207284276;
--//   return secondsSinceEpochOnFridayApril042008;
--  return 1262304000; // January 1st, 2010, 00:00:00
--}
- Time UtilsSimulationTimeToTime (Time time)
- {
--  return time + Seconds (TimeBase ());
-+  UintegerValue uintegerValue;
-+  GlobalValue::GetValueByName ("SimulationTimeBase", uintegerValue);
-+  return time + Seconds (uintegerValue.Get ());
- }
- Time UtilsTimeToSimulationTime (Time time)
- {
--  return time - Seconds (TimeBase ());
-+  UintegerValue uintegerValue;
-+  GlobalValue::GetValueByName ("SimulationTimeBase", uintegerValue);
-+  return time - Seconds (uintegerValue.Get ());
- }
- Time UtilsTimevalToTime (struct timeval tv)
- {

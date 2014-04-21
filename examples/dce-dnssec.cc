@@ -254,6 +254,7 @@ int main (int argc, char *argv[])
 #ifdef BIND9
   //  bind9.UseManualConfig (cacheSv);
   bind9.SetCacheServer (cacheSv.Get (0));
+  bind9.EnableDebug (NodeContainer (fakeRoot, trustAuth, subAuth, cacheSv));
   bind9.Install (NodeContainer (fakeRoot, trustAuth, subAuth, cacheSv));
 #else
   if (m_disableDnssec)

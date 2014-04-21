@@ -599,7 +599,7 @@ ApplicationContainer
 Bind9Helper::Install (NodeContainer c)
 {
   ApplicationContainer apps;
-  //  CreateZones (c);
+  CreateZones (c);
   for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
     {
       apps.Add (InstallPriv (*i));
