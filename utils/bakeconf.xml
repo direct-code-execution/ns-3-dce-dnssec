@@ -1581,7 +1581,7 @@
       </build>
     </module>
 
-    <module name="dce-dnssec-1.2">
+    <module name="dce-dnssec">
       <source type="mercurial">
         <attribute name="url" value="http://ns3-dev.sekiya-lab.info/hg/ns-3-dce-dnssec/"/>
         <attribute name="module_directory" value="ns-3-dce/myscripts/ns-3-dce-dnssec"/>
