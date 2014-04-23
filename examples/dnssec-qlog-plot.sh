@@ -1,33 +1,51 @@
 #!/bin/bash
 
-OUTPUT="output"
+OUTPUT=$1
+ZONES=("10" "50" "100" "245" "500" "1000")
 
-grep "Query time" ${OUTPUT}/dnssec/stdout.log  | awk '{print $4/1000}' >  resp-time-dnssec.dat
-grep "Query time" ${OUTPUT}/dns/stdout.log  | awk '{print $4/1000}' >  resp-time-dns.dat
+
+for idx in {0..5}
+do
+grep "Query time" ${OUTPUT}/dnssec/stdout-${ZONES[$idx]}.log  | awk '{print $4/1000}' >  ${OUTPUT}/resp-time-dnssec-${ZONES[$idx]}.dat
+grep "Query time" ${OUTPUT}/dns/stdout-${ZONES[$idx]}.log  | awk '{print $4/1000}' >  ${OUTPUT}/resp-time-dns-${ZONES[$idx]}.dat
+done
+
+chown -R tazaki.tazaki ${OUTPUT}
 
 #R --no-save <bwplot-qlog.R
 
 R -q --no-save  << EndR
 require(lattice)
 
-postscript("resp-time-boxw.eps", horizontal = FALSE, onefile = FALSE, 
+postscript("${OUTPUT}/resp-time-boxw.eps", horizontal = FALSE, onefile = FALSE, 
            paper = "special", height = 8.9, width = 12.7, family="Helvetica")
 
+DATA1 <- matrix(rbind(10, scan('${OUTPUT}/resp-time-dnssec-10.dat', comment.char="#"), scan('${OUTPUT}/resp-time-dns-10.dat', comment.char="#")),ncol=3,byrow=T)
+DATA2 <- matrix(rbind(50, scan('${OUTPUT}/resp-time-dnssec-50.dat', comment.char="#"), scan('${OUTPUT}/resp-time-dns-50.dat', comment.char="#")),ncol=3,byrow=T)
+DATA3 <- matrix(rbind(100, scan('${OUTPUT}/resp-time-dnssec-100.dat', comment.char="#"), scan('${OUTPUT}/resp-time-dns-100.dat', comment.char="#")),ncol=3,byrow=T)
+DATA4 <- matrix(rbind(245, scan('${OUTPUT}/resp-time-dnssec-245.dat', comment.char="#"), scan('${OUTPUT}/resp-time-dns-245.dat', comment.char="#")),ncol=3,byrow=T)
+DATA5 <- matrix(rbind(500, scan('${OUTPUT}/resp-time-dnssec-500.dat', comment.char="#"), scan('${OUTPUT}/resp-time-dns-500.dat', comment.char="#")),ncol=3,byrow=T)
+DATA6 <- matrix(rbind(1000, scan('${OUTPUT}/resp-time-dnssec-1000.dat', comment.char="#"), scan('${OUTPUT}/resp-time-dns-1000.dat', comment.char="#")),ncol=3,byrow=T)
 
-DATA1 <- scan("resp-time-dnssec.dat", comment.char="#")
-DATA2 <- scan("resp-time-dns.dat", comment.char="#")
 
-#par(tcl=0.4)
-par(mar=c(5, 6, 4, 2))
-#par(xaxs="i")
-#par(yaxs="i")
+D <- rbind (DATA1, DATA2, DATA3, DATA4, DATA5, DATA6)
+D <- data.frame(D)
+D\$X1 <- factor(D\$X1)
 
-#boxplot (DATA1, DATA2, names=c("DNSSEC", "DNS"))
 
-rb <- boxplot (DATA1, DATA2, range=0, notch=F, outline=F,
-      	names = c("DNSSEC", "DNS"),
-   	xlab="", ylab="Response Time (sec)",
-	boxwex=0.4, cex.axis=2.5, cex.lab=3, lwd=4,lty=1)
+
+rb <- boxplot (X2 ~ X1, data=D, range=0, notch=F, outline=F,
+        name=c("DNSSEC"),
+   	xlab="Number of Queries (n)", ylab="Response Time (sec)",
+        col="red",
+	boxwex=0.4, cex.axis=2.5, cex.lab=3, lwd=4,lty=1, at=1:6-0.25)
+        #main="outgoing-range=50240",
+
+rb <- boxplot (X3 ~ X1, data=D, range=0, notch=F, outline=F,
+        name=c("DNS"),
+	boxwex=0.4, cex.axis=2.5, cex.lab=3, lwd=4,lty=1, at=1:6+0.25,add=T)
+
+legend("topleft", legend = c("DNSSEC", "DNS"), col = c("red", "black"), pch = 15)
 box(lwd=8)
 
 
@@ -42,6 +60,6 @@ box(lwd=8)
 
 EndR
 
-evince resp-time-boxw.eps
+evince ${OUTPUT}/resp-time-boxw.eps
 
 exit

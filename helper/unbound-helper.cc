@@ -232,6 +232,7 @@ UnboundHelper::GenerateConfig (Ptr<Node> node)
       conf << "access-control: 0.0.0.0/0 allow" << std::endl;
       conf << "num-threads: 5" << std::endl;
       conf << "do-daemonize: no" << std::endl;
+      conf << "# outgoing-range: 50240" << std::endl;
 
       // named.root
       conf_file.str ("");

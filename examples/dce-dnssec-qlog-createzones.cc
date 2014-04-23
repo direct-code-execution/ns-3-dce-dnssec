@@ -11,6 +11,7 @@
 #include "ns3/udp-header.h"
 #include "ns3/constant-position-mobility-model.h"
 #include <fstream>
+#include <sys/resource.h>
 
 using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("DceDnssec");
@@ -92,6 +93,22 @@ CsmaRxCallback (std::string context, Ptr<const Packet> originalPacket)
 
 }
 
+static void
+SetRlimit ()
+{
+  int ret;
+  struct rlimit limit;
+  limit.rlim_cur = 10240;
+  limit.rlim_max = 10240;
+
+  ret = setrlimit (RLIMIT_NOFILE, &limit);
+  if (ret == -1)
+    {
+      perror ("setrlimit");
+    }
+  return;
+}
+
 bool m_delay = true;
 uint32_t nNodes = 1;
 bool enablePcap = false;
@@ -106,6 +123,8 @@ std::string querylog_file = "qlog-10.log";
 
 int main (int argc, char *argv[])
 {
+  SetRlimit ();
+
   CommandLine cmd;
   cmd.AddValue ("processDelay", "add process delay (default 1)", m_delay);
   cmd.AddValue ("nNodes", "the number of client nodes (default 1)", nNodes);
@@ -157,6 +176,7 @@ int main (int argc, char *argv[])
     {
       csma.EnablePcapAll ("dce-dnssec");
     }
+//  csma.EnablePcap ("dce-dnssec", devices.Get (581), true);
 
   LinuxStackHelper stack;
   stack.Install (nodes);
@@ -174,8 +194,9 @@ int main (int argc, char *argv[])
   processManager.Install (client);
 
   Ipv4AddressHelper address;
+  Ipv4InterfaceContainer interfaces;
   address.SetBase ("192.168.0.0", "255.255.0.0", "0.0.100.1");
-  address.Assign (devices);
+  interfaces = address.Assign (devices);
   address.SetBase ("192.168.0.0", "255.255.0.0");
   address.Assign (devices);
 
@@ -204,10 +225,6 @@ int main (int argc, char *argv[])
   ::system ((std::string ("rm -f files-") + oss.str () + "/tmp/namedb/auto-trust-anchor").c_str ());
   ::system ((std::string ("cat files-0/tmp/namedb/*.key > files-") 
              + oss.str () +"/tmp/namedb/auto-trust-anchor").c_str ());
-  // ::system ((std::string ("cp `grep -H \"DNSKEY 256\" files-0/tmp/namedb/*.key | awk '{print $1}' | sed \"s/:.//\"` files-") 
-  //             + oss.str () +"/tmp/namedb/auto-trust-anchor").c_str ());
-  // ::system ((std::string ("unbound-anchor -a files-") 
-  //             + oss.str () +"/tmp/namedb/auto-trust-anchor").c_str ());
 
   DceApplicationHelper process;
   ApplicationContainer apps;
@@ -225,7 +242,7 @@ int main (int argc, char *argv[])
       query_map = bind9.ImportQueryLog (querylog_file);
 
       int j = 0;
-      unbound.SetForwarder (client, (std::string ("192.168.100.") + oss.str ()).c_str ());
+      unbound.SetForwarder (client, interfaces.GetAddress (interfaces.GetN () - 2, 0));
       unbound.EnableDebug (client);
       unbound.Install (client);
       if (m_disableDnssec)
@@ -253,7 +270,7 @@ int main (int argc, char *argv[])
     }
   else
     {
-      unbound.SetForwarder (client, (std::string ("192.168.100.") + oss.str ()).c_str ());
+      unbound.SetForwarder (client, interfaces.GetAddress (interfaces.GetN () - 2, 0));
       unbound.EnableDebug (client);
       unbound.Install (client);
       if (m_disableDnssec)
