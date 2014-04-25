@@ -1553,7 +1553,7 @@
       <depends_on name="openssl" optional="False"/>
       <!-- build type="autotools" objdir="no" -->
       <build type="make" objdir="yes">
-        <attribute name="pre_installation" value="cd $SRCDIR; autoreconf -i; CFLAGS='-fPIC -g' LDFLAGS=-pie ./configure --disable-linux-caps --enable-epoll=none --with-openssl=$INSTALLDIR"/>
+        <attribute name="pre_installation" value="cd $SRCDIR; autoreconf -i; LD_LIBRARY_PATH=../../build/lib CFLAGS='-fPIC -g' LDFLAGS=-pie ./configure --disable-linux-caps --enable-epoll=none --with-openssl=$INSTALLDIR"/>
         <attribute name="install_arguments" value="-n" />
         <attribute name="post_installation" value="cd $SRCDIR; mkdir -p $INSTALLDIR/bin_dce; /bin/cp bin/named/named bin/dig/dig bin/rndc/rndc $INSTALLDIR/bin_dce"/>
       </build>
