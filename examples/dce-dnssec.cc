@@ -219,7 +219,7 @@ int main (int argc, char *argv[])
   // 
   bind9.UseManualConfig (trustAuth);
   bind9.SetNsAddr (trustAuth.Get (0), "10.0.0.2");
-  bind9.AddZone (trustAuth.Get (0), "org");
+  bind9.AddZone (trustAuth.Get (0), "com");
   if (m_disableDnssec)
     {
       bind9.DisableDnssec (trustAuth.Get (0));
@@ -230,7 +230,7 @@ int main (int argc, char *argv[])
   // 
   bind9.UseManualConfig (subAuth.Get (0));
   bind9.SetNsAddr (subAuth.Get (0), "10.0.0.3");
-  bind9.AddZone (subAuth.Get (0), "example.org");
+  bind9.AddZone (subAuth.Get (0), "facebook.com");
   if (m_disableDnssec)
     {
       bind9.DisableDnssec (subAuth.Get (0));
@@ -241,7 +241,7 @@ int main (int argc, char *argv[])
   // 
   bind9.UseManualConfig (subAuth.Get (1));
   bind9.SetNsAddr (subAuth.Get (1), "10.0.0.4");
-  bind9.AddZone (subAuth.Get (1), "second.example.org");
+  bind9.AddZone (subAuth.Get (1), "second.facebook.com");
   if (m_disableDnssec)
     {
       bind9.DisableDnssec (subAuth.Get (1));
@@ -269,7 +269,7 @@ int main (int argc, char *argv[])
   bind9.Install (NodeContainer (fakeRoot, trustAuth, subAuth));
 
   // XXX: need to be implemented to UnboundHelper or createzones.rb
-  ::system ("cat files-2/tmp/namedb/*.key > files-4/tmp/namedb/auto-trust-anchor");
+  ::system ("cat files-0/tmp/namedb/*.key > files-4/tmp/namedb/auto-trust-anchor");
 #endif
 
   // 
@@ -316,10 +316,10 @@ int main (int argc, char *argv[])
 	    {
 #if 0
 	      unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
-	         		 "mail.example.org.", "IN", "A");
+	         		 "wwww.facebook.com.", "IN", "A");
 #else
 	      bind9.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
-	         		 "mail.example.org.", "IN", "A");
+	         		 "www.facebook.com.", "IN", "A");
 #endif
 	      // unbound.SendQuery (client.Get (i), Seconds (10 + (1.0/m_qps)*j),
 	      //    		 "mail23mail23mail23mail23mail23mail23mail234mail234mail234.example.org.", "IN", "A");
