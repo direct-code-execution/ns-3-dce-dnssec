@@ -12,6 +12,7 @@
 #include "ns3/constant-position-mobility-model.h"
 #include <fstream>
 #include <sys/resource.h>
+#include "ns3/breakpoint.h"
 
 using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("DceDnssec");
@@ -78,6 +79,12 @@ CsmaRxCallback (std::string context, Ptr<const Packet> originalPacket)
 	      NS_LOG_INFO ("received dns packet " << originalPacket->GetSize () << " bytes");
 	      tot53pkts += originalPacket->GetSize ();
 	    }
+#if 0
+	  if (udpHdr.GetDestinationPort () == 62724) 
+	    {
+      NS_BREAKPOINT ();
+	    }
+#endif
 	}
       else if (packet->PeekHeader (tcpHdr) != 0)
 	{
@@ -158,7 +165,7 @@ int main (int argc, char *argv[])
   NetDeviceContainer devices;
   PointToPointHelper p2p;
   CsmaHelper csma;
-  csma.SetChannelAttribute ("DataRate", StringValue ("500Mbps"));
+  csma.SetChannelAttribute ("DataRate", StringValue ("5Gbps"));
   csma.SetChannelAttribute ("Delay", StringValue (linkDelay));
   devices = csma.Install (NodeContainer (nodes, cacheSv, client));
 
@@ -176,7 +183,8 @@ int main (int argc, char *argv[])
     {
       csma.EnablePcapAll ("dce-dnssec");
     }
-//  csma.EnablePcap ("dce-dnssec", devices.Get (581), true);
+//  csma.EnablePcap ("dce-dnssec", devices.Get (devices.GetN () - 2), true);
+//  csma.EnablePcap ("dce-dnssec", devices.Get (devices.GetN () - 1), true);
 
   LinuxStackHelper stack;
   stack.Install (nodes);
@@ -219,6 +227,10 @@ int main (int argc, char *argv[])
   unbound.EnableDebug (cacheSv);
   unbound.Install (cacheSv);
 
+  // send buffer
+  //stack.SysctlSet (cacheSv, ".net.core.wmem_max", "13107100");
+  //stack.SysctlSet (cacheSv, ".net.core.wmem_default", "13107100");
+
   // XXX: need to be implemented to UnboundHelper or createzones.rb
   std::ostringstream oss;
   oss << cacheSv.Get (0)->GetId ();
@@ -259,7 +271,7 @@ int main (int argc, char *argv[])
           {
             Query query = (*it);
             ++it;
-            //   std::cout << query.m_qname << query.m_class_name << query.m_type_name << std::endl;
+            // std::cout << query.m_tx_timestamp << " "  << query.m_qname << query.m_class_name << query.m_type_name << std::endl;
             
             bind9.SendQuery (client.Get (0), query.m_tx_timestamp,
                              query.m_qname, query.m_class_name, 

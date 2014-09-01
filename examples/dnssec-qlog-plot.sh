@@ -34,14 +34,14 @@ D\$X1 <- factor(D\$X1)
 
 
 
-rb <- boxplot (X2 ~ X1, data=D, range=0, notch=F, outline=F,
+rb <- boxplot (X2 ~ X1, data=D, range=1, notch=F, outline=F,
         name=c("DNSSEC"),
    	xlab="Number of Queries (n)", ylab="Response Time (sec)",
         col="red",
 	boxwex=0.4, cex.axis=2.5, cex.lab=3, lwd=4,lty=1, at=1:6-0.25)
         #main="outgoing-range=50240",
 
-rb <- boxplot (X3 ~ X1, data=D, range=0, notch=F, outline=F,
+rb <- boxplot (X3 ~ X1, data=D, range=1, notch=F, outline=F,
         name=c("DNS"),
 	boxwex=0.4, cex.axis=2.5, cex.lab=3, lwd=4,lty=1, at=1:6+0.25,add=T)
 

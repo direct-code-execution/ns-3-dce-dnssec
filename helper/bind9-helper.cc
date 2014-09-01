@@ -532,7 +532,7 @@ Bind9Helper::ImportNodesCreateZones (std::string logfile, bool disableDnssec)
   nsconfig.close ();
 
   // call createzone.rb
-  ret = ::system ("ruby createzones/createzones.rb --ttl=0 --nsconfig=nsconfig.txt --outdir=./ > createzones.log 2>&1");
+  ret = ::system ("ruby createzones/createzones.rb --nsconfig=nsconfig.txt --outdir=./ > createzones.log 2>&1");
   NS_ASSERT_MSG (ret == 0, "createzones.rb returned failure.");
 
   nodes.Create (linenum - 1);
