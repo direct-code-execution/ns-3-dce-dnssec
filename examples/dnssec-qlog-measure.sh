@@ -6,6 +6,12 @@ QPS="1 10 50 100"
 ZONES=("10" "50" "100" "245" "500" "1000")
 CLIENT=("21" "80" "119" "249" "378" "582")
 OUTPUT="output/`date \"+%y%m%d_%H%M\"`"
+#DLM=--dlm
+
+mkdir -p ${OUTPUT}/
+exec > ${OUTPUT}/exec.log
+exec 2>&1
+
 
 # Response time measurement
 # for DNSSEC
@@ -15,14 +21,14 @@ do
 rm -f *.pcap
 rm -rf files-*
 mkdir -p ${OUTPUT}/dnssec
-./waf --run "dce-dnssec-qlog-createzones --processDelay=1 --pcap=0 --disableDnssec=0 --querylog=qlog-${ZONES[$idx]}.log" --dlm 2>&1
+./waf --run "dce-dnssec-qlog-createzones --processDelay=1 --pcap=0 --disableDnssec=0 --querylog=qlog-${ZONES[$idx]}.log" ${DLM} 2>&1
 cat files-${CLIENT[$idx]}/var/log/*/stdout > ${OUTPUT}/dnssec/stdout-${ZONES[$idx]}.log
 
 # for DNS
 rm -f *.pcap
 rm -rf files-*
 mkdir -p ${OUTPUT}/dns
-./waf --run "dce-dnssec-qlog-createzones --processDelay=1 --pcap=0 --disableDnssec=1 --querylog=qlog-${ZONES[$idx]}.log" --dlm 2>&1
+./waf --run "dce-dnssec-qlog-createzones --processDelay=1 --pcap=0 --disableDnssec=1 --querylog=qlog-${ZONES[$idx]}.log" ${DLM} 2>&1
 cat files-${CLIENT[$idx]}/var/log/*/stdout > ${OUTPUT}/dns/stdout-${ZONES[$idx]}.log
 
 done

@@ -183,7 +183,7 @@ int main (int argc, char *argv[])
     {
       csma.EnablePcapAll ("dce-dnssec");
     }
-//  csma.EnablePcap ("dce-dnssec", devices.Get (devices.GetN () - 2), true);
+  csma.EnablePcap ("dce-dnssec", devices.Get (devices.GetN () - 2), true);
 //  csma.EnablePcap ("dce-dnssec", devices.Get (devices.GetN () - 1), true);
 
   LinuxStackHelper stack;
@@ -261,6 +261,9 @@ int main (int argc, char *argv[])
         {
           bind9.DisableDnssec (client.Get (0));
         }
+#define LOOPS 10
+      for (uint32_t k = 0 ; k < LOOPS; k++)
+        {
       for (std::map<std::string, std::list<Query> >::iterator i = query_map.begin();
            i != query_map.end(); i++){
         std::string key = (*i).first;
@@ -271,13 +274,15 @@ int main (int argc, char *argv[])
           {
             Query query = (*it);
             ++it;
-            // std::cout << query.m_tx_timestamp << " "  << query.m_qname << query.m_class_name << query.m_type_name << std::endl;
+            Time timestamp = query.m_tx_timestamp + (Seconds (50 * k));
+//            std::cout << timestamp << " " << query.m_tx_timestamp << " "  << query.m_qname << query.m_class_name << query.m_type_name << std::endl;
             
-            bind9.SendQuery (client.Get (0), query.m_tx_timestamp,
+            bind9.SendQuery (client.Get (0), timestamp,
                              query.m_qname, query.m_class_name, 
                              "A"); //query.m_type_name);
           }
         j++;
+      }
       }
     }
   else
