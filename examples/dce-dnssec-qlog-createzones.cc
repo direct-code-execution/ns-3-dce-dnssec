@@ -224,7 +224,7 @@ int main (int argc, char *argv[])
       unbound.DisableDnssec (cacheSv.Get (0));
     }
   unbound.SetCacheServer (cacheSv.Get (0));
-  unbound.EnableDebug (cacheSv);
+  //unbound.EnableDebug (cacheSv);
   unbound.Install (cacheSv);
 
   // send buffer
@@ -255,7 +255,7 @@ int main (int argc, char *argv[])
 
       int j = 0;
       unbound.SetForwarder (client, interfaces.GetAddress (interfaces.GetN () - 2, 0));
-      unbound.EnableDebug (client);
+      //unbound.EnableDebug (client);
       unbound.Install (client);
       if (m_disableDnssec)
         {
@@ -288,7 +288,7 @@ int main (int argc, char *argv[])
   else
     {
       unbound.SetForwarder (client, interfaces.GetAddress (interfaces.GetN () - 2, 0));
-      unbound.EnableDebug (client);
+      //unbound.EnableDebug (client);
       unbound.Install (client);
       if (m_disableDnssec)
         {
